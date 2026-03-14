@@ -1,0 +1,41 @@
+from uuid import uuid4
+from sqlalchemy import Column, Text, String, DateTime, JSON
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.db.database import Base
+
+
+def generate_problem_id() -> str:
+    return f"problem_{uuid4().hex[:12]}"
+
+
+class Problem(Base):
+    __tablename__ = "problems"
+
+    id = Column(String(64), primary_key=True, index=True, default=generate_problem_id)
+    title = Column(String(100), nullable=False)
+    description = Column(Text, nullable=False)
+    category = Column(String(50), index=True, nullable=False)
+    difficulty = Column(String(20), index=True, nullable=False)
+    starter_code = Column(JSON, nullable=False, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # _links is meant to point to the middleman between two tables with many to many relationships, with back_populates being that other object
+    # If a link is deleted, cascade="all, delete-orphan" deletes the link row (ProblemListProblem) but NOT the individual objects (ProblemList or Problem).
+    problem_list_links = relationship(
+        "ProblemListProblem",
+        back_populates="problem",
+        cascade="all, delete-orphan",
+        overlaps="problem_lists,problems",
+    )
+    # This is the relationship to the other object, where secondary has to be the name of middleman table.
+    problem_lists = relationship(
+        "ProblemList",
+        secondary="problem_list_problems",
+        back_populates="problems",
+        overlaps="problem_list_links,problem_links,problem,problem_list",
+    )
+    submissions = relationship("Submission", back_populates="problem")
+    user_problems = relationship("UserProblem", back_populates="problem", cascade="all, delete-orphan")
+    testcases = relationship("TestCase", back_populates="problem", cascade="all, delete-orphan")
+    interview_sessions = relationship("InterviewSession", back_populates="problem", cascade="all, delete-orphan")
