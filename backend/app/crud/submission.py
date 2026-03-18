@@ -9,6 +9,12 @@ from app.core.constants import SUBMISSION_RESULT_FAIL, SUBMISSION_RESULT_PASS
 def create_submission(submission: SubmissionSubmit, evaluation: dict, user_id: str, db: Session):
     raw_result = str(evaluation.get("result"))
     result = raw_result if raw_result in (SUBMISSION_RESULT_PASS, SUBMISSION_RESULT_FAIL) else SUBMISSION_RESULT_FAIL
+    tests_total = int(evaluation.get("tests_total") or 0)
+    tests_passed = int(evaluation.get("tests_passed") or 0)
+    if tests_passed < 0:
+        tests_passed = 0
+    if tests_passed > tests_total:
+        tests_passed = tests_total
 
     db_submission = Submission(
         code_submitted=submission.code_submitted,
@@ -16,7 +22,9 @@ def create_submission(submission: SubmissionSubmit, evaluation: dict, user_id: s
         language=submission.language,
         user_id=user_id,
         problem_id=submission.problem_id,
-        error=evaluation.get("error_message")
+        error=evaluation.get("error_message"),
+        tests_passed=tests_passed,
+        tests_total=tests_total,
     )
     db.add(db_submission)
     db.flush()

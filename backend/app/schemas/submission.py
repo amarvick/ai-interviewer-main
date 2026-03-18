@@ -19,6 +19,8 @@ class SubmissionResponse(BaseModel):
     code_submitted: str
     language: Language
     result: SubmissionResult
+    tests_passed: int
+    tests_total: int
     error: str | None = None
     created_at: datetime
 

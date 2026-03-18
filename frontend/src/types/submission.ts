@@ -11,6 +11,8 @@ export interface SubmissionResponse {
   code_submitted: string;
   language: string;
   result: "pass" | "fail";
+  tests_passed: number;
+  tests_total: number;
   error?: string | null;
   created_at?: string;
 }

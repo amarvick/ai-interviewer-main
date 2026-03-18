@@ -133,6 +133,10 @@ export default function ProblemPageTerminal({
                   </span>
                   <span>Language: {submission.language}</span>
                   <span>Result: {submission.result.toUpperCase()}</span>
+                  <span>
+                    Tests: {submission.tests_passed ?? 0} /{" "}
+                    {submission.tests_total ?? testCases.length}
+                  </span>
                 </div>
               </article>
             ))}

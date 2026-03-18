@@ -10,6 +10,8 @@ def evaluate_submission(code_submitted: str, language: str, test_cases: list):
         return {
             "result": SUBMISSION_RESULT_FAIL,
             "error_message": "No test cases found for this problem",
+            "tests_passed": 0,
+            "tests_total": 0,
         }
 
     if language == "python":
@@ -27,4 +29,6 @@ def evaluate_submission(code_submitted: str, language: str, test_cases: list):
     return {
         "result": SUBMISSION_RESULT_FAIL,
         "error_message": f"Language '{language}' evaluation is not implemented yet",
+        "tests_passed": 0,
+        "tests_total": len(test_cases),
     }

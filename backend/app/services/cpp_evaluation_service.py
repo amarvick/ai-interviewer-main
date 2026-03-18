@@ -60,6 +60,8 @@ int main(int argc, char** argv) {
 
 
 def evaluate_cpp_submission(code_submitted: str, test_cases: list):
+    tests_total = len(test_cases)
+
     with tempfile.TemporaryDirectory(prefix="submission_eval_cpp_") as tmpdir:
         source_path = f"{tmpdir}/runner.cpp"
         binary_path = f"{tmpdir}/runner"
@@ -67,6 +69,15 @@ def evaluate_cpp_submission(code_submitted: str, test_cases: list):
         source = _CPP_RUNNER_TEMPLATE.replace("__SUBMISSION_CODE__", code_submitted)
         with open(source_path, "w", encoding="utf-8") as f:
             f.write(source)
+
+        def failure(message: str, passed: int = 0):
+            normalized = max(0, min(passed, tests_total))
+            return {
+                "result": SUBMISSION_RESULT_FAIL,
+                "error_message": message,
+                "tests_total": tests_total,
+                "tests_passed": normalized,
+            }
 
         try:
             compile_proc = subprocess.run(
@@ -77,25 +88,19 @@ def evaluate_cpp_submission(code_submitted: str, test_cases: list):
                 check=False,
             )
         except subprocess.TimeoutExpired:
-            return {"result": SUBMISSION_RESULT_FAIL, "error_message": "Compilation timed out"}
+            return failure("Compilation timed out")
         except FileNotFoundError:
-            return {
-                "result": SUBMISSION_RESULT_FAIL,
-                "error_message": "C++ runtime not available (g++ not installed)",
-            }
+            return failure("C++ runtime not available (g++ not installed)")
 
         if compile_proc.returncode != 0:
             error_text = (compile_proc.stderr or compile_proc.stdout or "").strip()
-            return {"result": SUBMISSION_RESULT_FAIL, "error_message": f"Compilation error: {error_text[:300]}"}
+            return failure(f"Compilation error: {error_text[:300]}")
 
         for index, test_case in enumerate(test_cases, start=1):
             try:
                 nums, target = _extract_two_sum_inputs(test_case.params)
             except ValueError as exc:
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": f"Unsupported testcase shape on case #{index}: {exc}",
-                }
+                return failure(f"Unsupported testcase shape on case #{index}: {exc}")
 
             try:
                 run_proc = subprocess.run(
@@ -106,46 +111,45 @@ def evaluate_cpp_submission(code_submitted: str, test_cases: list):
                     check=False,
                 )
             except subprocess.TimeoutExpired:
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": f"Time limit exceeded on test case #{index}",
-                }
+                return failure(f"Time limit exceeded on test case #{index}", index - 1)
 
             stdout = run_proc.stdout.strip()
             if not stdout:
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": f"Empty runner output on test case #{index}",
-                }
+                return failure(f"Empty runner output on test case #{index}", index - 1)
 
             try:
                 runner_result = _parse_runner_output(stdout)
             except json.JSONDecodeError:
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": f"Invalid runner output on test case #{index}: {stdout[:200]}",
-                }
+                return failure(
+                    f"Invalid runner output on test case #{index}: {stdout[:200]}",
+                    index - 1,
+                )
 
             if not runner_result.get("ok"):
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": (
+                return failure(
+                    (
                         f"Runtime error on test case #{index}: "
                         f"{runner_result.get('error', 'unknown error')}"
                     ),
-                }
+                    index - 1,
+                )
 
             actual = runner_result.get("output")
             expected = test_case.expected_output
             if not _outputs_match(actual, expected):
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": (
+                return failure(
+                    (
                         f"Wrong answer on test case #{index}. Expected {expected}, got {actual}"
                     ),
-                }
+                    index - 1,
+                )
 
-    return {"result": SUBMISSION_RESULT_PASS, "error_message": None}
+    return {
+        "result": SUBMISSION_RESULT_PASS,
+        "error_message": None,
+        "tests_total": tests_total,
+        "tests_passed": tests_total,
+    }
 
 
 def _extract_two_sum_inputs(params):
@@ -176,4 +180,3 @@ def _parse_runner_output(stdout: str) -> dict[str, Any]:
     if not lines:
         raise json.JSONDecodeError("empty output", "", 0)
     return json.loads(lines[-1])
-

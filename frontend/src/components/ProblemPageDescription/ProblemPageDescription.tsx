@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import DOMPurify from "dompurify";
+import { marked } from "marked";
 import type { Problem } from "../../types/problem";
 import "./ProblemPageDescription.css";
 
@@ -8,6 +11,15 @@ interface ProblemPageDescriptionProps {
 export default function ProblemPageDescription({
   problem,
 }: ProblemPageDescriptionProps) {
+  const descriptionHtml = useMemo(() => {
+    const raw = marked.parse(problem.description || "", {
+      breaks: true,
+      mangle: false,
+      headerIds: false,
+    });
+    return DOMPurify.sanitize(raw);
+  }, [problem.description]);
+
   return (
     <article className="problem-panel" aria-labelledby="problem-title">
       <header className="problem-panel-header">
@@ -21,7 +33,10 @@ export default function ProblemPageDescription({
 
       <section className="problem-description">
         <h2>Description</h2>
-        <p>{problem.description}</p>
+        <div
+          className="problem-description-content"
+          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+        />
       </section>
     </article>
   );

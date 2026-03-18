@@ -1,7 +1,7 @@
 # DB Table Models
 
 from uuid import uuid4
-from sqlalchemy import Column, String, Text, ForeignKey, DateTime
+from sqlalchemy import Column, String, Text, ForeignKey, DateTime, Integer
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
@@ -20,6 +20,8 @@ class Submission(Base):
     code_submitted = Column(Text, nullable=False) # Code submitted by the user for this submission
     language = Column(String(20), nullable=False, index=True)
     result = Column(String(20), nullable=False)  # e.g., "pass", "fail"
+    tests_passed = Column(Integer, nullable=False, default=0)
+    tests_total = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     error = Column(Text, nullable=True)
 

@@ -23,27 +23,35 @@ TWO_SUM = {
     "title": "Two Sum",
     "category": "Arrays, Strings and Hashing",
     "difficulty": "Easy",
-    "description": """Given an array of integers nums and an integer target, return the indices i and j such that nums[i] + nums[j] == target and i != j.
-You may assume that every input has exactly one pair of indices i and j that satisfy the condition.
-Return the answer with the smaller index first.
+    "description": """Given an array of integers `nums` and an integer `target`, return indices `i` and `j` such that `nums[i] + nums[j] == target`. 
 
-Example 1:
+You may assume that exactly one valid pair exists and you may not use the same element twice.
+
+You can return the answer in any order.
+
+
+Example 1
+```
 Input: nums = [1, 2, 3, 6], target = 7
-Output: [0,3]
-Explanation: nums[0] + nums[3] == 7, so we return [0, 3].
+Output: [0, 3]
+```
 
-Example 2:
+Example 2
+```
 Input: nums = [7, 3, 8, 2], target = 11
-Output: [1,2]
+Output: [1, 2]
+```
 
-Example 3:
-Input: nums = [2,2], target = 4
-Output: [0,1]
+Example 3
+```
+Input: nums = [2, 2], target = 4
+Output: [0, 1]
+```
 
-Constraints:
-- 2 <= nums.length <= 1000
-- -10,000,000 <= nums[i] <= 10,000,000
-- -10,000,000 <= target <= 10,000,000
+Constraints
+- `2 <= nums.length <= 1000`
+- `-10^7 <= nums[i] <= 10^7`
+- `-10^7 <= target <= 10^7`
 """,
     "starter_code": {
         "python": """class Solution:

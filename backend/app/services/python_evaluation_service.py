@@ -110,6 +110,8 @@ if __name__ == "__main__":
 
 
 def evaluate_python_submission(code_submitted: str, test_cases: list):
+    tests_total = len(test_cases)
+
     with tempfile.TemporaryDirectory(prefix="submission_eval_") as tmpdir:
         submission_path = f"{tmpdir}/submission.py"
         runner_path = f"{tmpdir}/runner.py"
@@ -118,6 +120,15 @@ def evaluate_python_submission(code_submitted: str, test_cases: list):
             f.write(code_submitted)
         with open(runner_path, "w", encoding="utf-8") as f:
             f.write(_PYTHON_RUNNER_SCRIPT)
+
+        def failure(message: str, passed: int = 0):
+            normalized = max(0, min(passed, tests_total))
+            return {
+                "result": SUBMISSION_RESULT_FAIL,
+                "error_message": message,
+                "tests_total": tests_total,
+                "tests_passed": normalized,
+            }
 
         for index, test_case in enumerate(test_cases, start=1):
             case_payload = {"params": test_case.params}
@@ -134,49 +145,45 @@ def evaluate_python_submission(code_submitted: str, test_cases: list):
                     check=False,
                 )
             except subprocess.TimeoutExpired:
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": f"Time limit exceeded on test case #{index}",
-                }
+                return failure(f"Time limit exceeded on test case #{index}", index - 1)
 
             stdout = completed.stdout.strip()
             if not stdout:
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": f"Empty runner output on test case #{index}",
-                }
+                return failure(f"Empty runner output on test case #{index}", index - 1)
 
             try:
                 runner_result = _parse_runner_output(stdout)
             except json.JSONDecodeError:
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": (
-                        f"Invalid runner output on test case #{index}: {stdout[:200]}"
-                    ),
-                }
+                return failure(
+                    f"Invalid runner output on test case #{index}: {stdout[:200]}", index - 1
+                )
 
             if not runner_result.get("ok"):
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": (
+                return failure(
+                    (
                         f"Runtime error on test case #{index}: "
                         f"{runner_result.get('error', 'unknown error')}"
                     ),
-                }
+                    index - 1,
+                )
 
             actual = runner_result.get("output")
             expected = test_case.expected_output
             if not _outputs_match(actual, expected):
-                return {
-                    "result": SUBMISSION_RESULT_FAIL,
-                    "error_message": (
+                return failure(
+                    (
                         f"Wrong answer on test case #{index}. "
                         f"Expected {expected}, got {actual}"
                     ),
-                }
+                    index - 1,
+                )
 
-    return {"result": SUBMISSION_RESULT_PASS, "error_message": None}
+    return {
+        "result": SUBMISSION_RESULT_PASS,
+        "error_message": None,
+        "tests_total": tests_total,
+        "tests_passed": tests_total,
+    }
 
 
 def _outputs_match(actual: Any, expected: Any) -> bool:

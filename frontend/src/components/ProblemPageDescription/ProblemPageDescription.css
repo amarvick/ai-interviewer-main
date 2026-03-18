@@ -19,9 +19,40 @@
   font-size: 1rem;
 }
 
-.problem-description p {
-  margin: 0;
+.problem-description-content {
   color: #dfe7ff;
   line-height: 1.6;
-  white-space: pre-wrap;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.problem-description-content p {
+  margin: 0;
+}
+
+.problem-description code {
+  font-family: "Source Code Pro", "SFMono-Regular", Consolas, monospace;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(93, 112, 163, 0.35);
+  border-radius: 6px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.92em;
+  color: #aee2ff;
+}
+
+.problem-description pre {
+  background: rgba(10, 16, 31, 0.9);
+  border: 1px solid rgba(93, 112, 163, 0.4);
+  border-radius: 8px;
+  padding: 0.85rem;
+  overflow-x: auto;
+}
+
+.problem-description pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #d9f0ff;
+  display: block;
+  white-space: pre;
 }
