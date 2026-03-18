@@ -1,36 +1,47 @@
-.problem-panel {
+.problemPanel {
   padding: 1rem;
   height: 100%;
   overflow-y: auto;
+  border: 1px solid rgba(132, 153, 219, 0.22);
+  border-radius: 12px;
+  background: rgba(7, 11, 24, 0.65);
 }
 
-.problem-panel-header h1 {
+.problemPanelHeader {
+  margin-bottom: 0.35rem;
+}
+
+.problemPanelHeader h1 {
   margin: 0;
   font-size: 1.2rem;
 }
 
-.problem-meta {
+.problemMeta {
   margin: 0.35rem 0 0;
   color: #9fb0e8;
 }
 
-.problem-description h2 {
-  margin: 1rem 0 0.35rem;
+.descriptionSection {
+  margin-top: 1rem;
+}
+
+.descriptionHeading {
+  margin: 0 0 0.35rem;
   font-size: 1rem;
 }
 
-.problem-description-content {
+.descriptionContent {
   color: #dfe7ff;
   line-height: 1.6;
   display: grid;
   gap: 0.65rem;
 }
 
-.problem-description-content p {
+.descriptionContent p {
   margin: 0;
 }
 
-.problem-description code {
+.descriptionContent code {
   font-family: "Source Code Pro", "SFMono-Regular", Consolas, monospace;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(93, 112, 163, 0.35);
@@ -40,7 +51,7 @@
   color: #aee2ff;
 }
 
-.problem-description pre {
+.descriptionContent pre {
   background: rgba(10, 16, 31, 0.9);
   border: 1px solid rgba(93, 112, 163, 0.4);
   border-radius: 8px;
@@ -48,7 +59,7 @@
   overflow-x: auto;
 }
 
-.problem-description pre code {
+.descriptionContent pre code {
   background: transparent;
   border: none;
   padding: 0;

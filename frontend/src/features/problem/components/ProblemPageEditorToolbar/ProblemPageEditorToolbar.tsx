@@ -1,7 +1,8 @@
+import { type Language, isLanguage } from "@/types/language";
 interface ProblemPageEditorToolbarProps {
-  selectedLanguage: string;
-  handleLanguageChange: (nextLanguage: string) => void;
-  languageOptions: string[];
+  selectedLanguage: Language;
+  handleLanguageChange: (nextLanguage: Language) => void;
+  languageOptions: Language[];
   onSubmit: () => void;
   isSubmitting: boolean;
   isSubmitDisabled?: boolean;
@@ -9,7 +10,7 @@ interface ProblemPageEditorToolbarProps {
   submittingLabel?: string;
 }
 
-const LANGUAGE_LABELS: Record<string, string> = {
+const LANGUAGE_LABELS: Record<Language, string> = {
   python: "Python",
   javascript: "JavaScript",
   java: "Java",
@@ -32,7 +33,12 @@ export default function ProblemPageEditorToolbar({
       <select
         id="editor-language"
         value={selectedLanguage}
-        onChange={(event) => handleLanguageChange(event.target.value)}
+        onChange={(event) => {
+          const value = event.target.value;
+          if (isLanguage(value)) {
+            handleLanguageChange(value);
+          }
+        }}
       >
         {languageOptions.map((language) => (
           <option key={language} value={language}>

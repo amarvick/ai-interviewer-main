@@ -53,6 +53,7 @@ export default function ProblemPageEditor({ problem }: ProblemPageEditorProps) {
         submissions={submissions}
         hasSubmittedInSession={hasSubmittedInSession}
         sessionErrors={sessionErrors}
+        isSubmitting={isSubmitting}
       />
 
       <Modal

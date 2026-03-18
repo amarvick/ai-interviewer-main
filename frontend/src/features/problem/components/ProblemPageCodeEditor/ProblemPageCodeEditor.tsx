@@ -1,7 +1,14 @@
-import Editor, { type BeforeMount } from "@monaco-editor/react";
+import { Suspense, lazy } from "react";
+import type { BeforeMount } from "@monaco-editor/react";
+import type { Language } from "@/types/language";
+
+const MonacoEditor = lazy(async () => {
+  const module = await import("@monaco-editor/react");
+  return { default: module.default };
+});
 
 interface ProblemPageCodeEditorProps {
-  selectedLanguage: string;
+  selectedLanguage: Language;
   updateCode: (value: string | undefined) => void;
   code: string;
   readOnly?: boolean;
@@ -43,25 +50,27 @@ export default function ProblemPageCodeEditor({
 }: ProblemPageCodeEditorProps) {
   return (
     <div className={`editor-monaco-wrap${className ? ` ${className}` : ""}`}>
-      <Editor
-        height="100%"
-        language={selectedLanguage}
-        theme="ai-interviewer-violet"
-        value={code}
-        beforeMount={defineTheme}
-        onChange={updateCode}
-        options={{
-          fontSize: 14,
-          autoClosingBrackets: "languageDefined",
-          minimap: { enabled: false },
-          tabSize: 4,
-          insertSpaces: true,
-          smoothScrolling: true,
-          padding: { top: 10 },
-          readOnly,
-          domReadOnly: readOnly,
-        }}
-      />
+      <Suspense fallback={<div className="editor-loading">Loading editor…</div>}>
+        <MonacoEditor
+          height="100%"
+          language={selectedLanguage}
+          theme="ai-interviewer-violet"
+          value={code}
+          beforeMount={defineTheme}
+          onChange={updateCode}
+          options={{
+            fontSize: 14,
+            autoClosingBrackets: "languageDefined",
+            minimap: { enabled: false },
+            tabSize: 4,
+            insertSpaces: true,
+            smoothScrolling: true,
+            padding: { top: 10 },
+            readOnly,
+            domReadOnly: readOnly,
+          }}
+        />
+      </Suspense>
     </div>
   );
 }

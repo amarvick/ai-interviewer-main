@@ -11,9 +11,13 @@ export default function ProblemListPage() {
   return (
     <section className="problem-list-section">
       <h1>{data?.name ?? "Problem List"}</h1>
-      {isLoading && <p className="status-line">Loading problem lists...</p>}
+      {isLoading && (
+        <p className="status-line" role="status" aria-live="polite">
+          Loading problem lists...
+        </p>
+      )}
       {isError && (
-        <p className="status-line error">
+        <p className="status-line error" role="alert">
           {(error as Error).message || "Request failed."}
         </p>
       )}
@@ -21,7 +25,9 @@ export default function ProblemListPage() {
         <ProblemGrid problems={data.problems} />
       )}
       {!isLoading && !isError && data?.problems.length === 0 && (
-        <p className="status-line">No problem lists found yet.</p>
+        <p className="status-line" role="status" aria-live="polite">
+          No problem lists found yet.
+        </p>
       )}
     </section>
   );

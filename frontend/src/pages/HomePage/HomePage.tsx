@@ -50,9 +50,13 @@ export default function HomePage() {
           <span>{problemLists?.length ?? 0} available</span>
         </div>
 
-        {isLoading && <p className="status-line">Loading problem lists...</p>}
+        {isLoading && (
+          <p className="status-line" role="status" aria-live="polite">
+            Loading problem lists...
+          </p>
+        )}
         {isError && (
-          <p className="status-line error">
+          <p className="status-line error" role="alert">
             {(error as Error).message || "Request failed."}
           </p>
         )}
@@ -60,7 +64,9 @@ export default function HomePage() {
           <ProblemListGrid problemLists={problemLists} />
         )}
         {!isLoading && !isError && problemLists?.length === 0 && (
-          <p className="status-line">No problem lists found yet.</p>
+          <p className="status-line" role="status" aria-live="polite">
+            No problem lists found yet.
+          </p>
         )}
       </section>
     </div>

@@ -7,10 +7,15 @@ import {
   buildInitialStatuses,
   mapStatusesForResult,
 } from "@/features/problem/utils/problemEditor";
+import {
+  DEFAULT_LANGUAGE,
+  isLanguage,
+  type Language,
+} from "@/types/language";
 
 export interface UseProblemEditorResult {
-  languageOptions: string[];
-  selectedLanguage: string;
+  languageOptions: Language[];
+  selectedLanguage: Language;
   code: string;
   submissions: SubmissionResponse[];
   isSubmitting: boolean;
@@ -18,7 +23,7 @@ export interface UseProblemEditorResult {
   sessionErrors: string[];
   testCaseStatuses: Record<string, TestCaseStatus>;
   isSolvedModalOpen: boolean;
-  handleLanguageChange: (language: string) => void;
+  handleLanguageChange: (language: Language) => void;
   updateCode: (value: string | undefined) => void;
   handleSubmit: () => Promise<void>;
   closeSolvedModal: () => void;
@@ -27,13 +32,13 @@ export interface UseProblemEditorResult {
 
 export function useProblemEditor(problem: Problem): UseProblemEditorResult {
   const starterCode = problem?.starter_code ?? {};
-  const languageOptions = useMemo(() => {
-    const keys = Object.keys(starterCode);
-    return keys.length > 0 ? keys : ["javascript"];
+  const languageOptions = useMemo<Language[]>(() => {
+    const keys = Object.keys(starterCode).filter(isLanguage) as Language[];
+    return keys.length > 0 ? keys : [DEFAULT_LANGUAGE];
   }, [starterCode]);
 
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(
-    languageOptions[0] ?? "javascript"
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    languageOptions[0] ?? DEFAULT_LANGUAGE
   );
   const [code, setCode] = useState<string>(starterCode[selectedLanguage] ?? "");
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
@@ -74,14 +79,14 @@ export function useProblemEditor(problem: Problem): UseProblemEditorResult {
   }, [problem.id]);
 
   useEffect(() => {
-    setSelectedLanguage(languageOptions[0] ?? "javascript");
+    setSelectedLanguage(languageOptions[0] ?? DEFAULT_LANGUAGE);
   }, [languageOptions]);
 
   useEffect(() => {
     setCode(starterCode[selectedLanguage] ?? "");
   }, [starterCode, selectedLanguage]);
 
-  const handleLanguageChange = (nextLanguage: string) => {
+  const handleLanguageChange = (nextLanguage: Language) => {
     setSelectedLanguage(nextLanguage);
     setCode(starterCode[nextLanguage] ?? "");
   };

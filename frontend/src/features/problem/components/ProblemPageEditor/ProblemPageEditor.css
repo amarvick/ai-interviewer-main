@@ -60,3 +60,13 @@
   overflow: hidden;
   border-radius: 0 0 10px 10px;
 }
+
+.editor-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #a9b8ff;
+  font-size: 0.9rem;
+  background: rgba(7, 11, 24, 0.6);
+}

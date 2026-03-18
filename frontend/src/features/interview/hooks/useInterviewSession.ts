@@ -21,12 +21,17 @@ import {
   summarizeRubric,
   toChatHistory,
 } from "@/features/interview/utils/interview";
+import {
+  DEFAULT_LANGUAGE,
+  isLanguage,
+  type Language,
+} from "@/types/language";
 
 type InterviewPanelTab = "chat" | "feedback";
 
 export interface UseInterviewSessionResult {
-  languageOptions: string[];
-  selectedLanguage: string;
+  languageOptions: Language[];
+  selectedLanguage: Language;
   code: string;
   draftMessage: string;
   messages: ChatMessage[];
@@ -46,7 +51,7 @@ export interface UseInterviewSessionResult {
   hasSession: boolean;
   setDraftMessage: (value: string) => void;
   setActiveTab: (tab: InterviewPanelTab) => void;
-  handleLanguageChange: (lang: string) => void;
+  handleLanguageChange: (lang: Language) => void;
   updateCode: (value: string | undefined) => void;
   handleSend: () => Promise<void>;
   handleSubmitCode: () => Promise<void>;
@@ -55,13 +60,13 @@ export interface UseInterviewSessionResult {
 
 export function useInterviewSession(problem: Problem): UseInterviewSessionResult {
   const starterCode = problem?.starter_code ?? {};
-  const languageOptions = useMemo(() => {
-    const keys = Object.keys(starterCode);
-    return keys.length > 0 ? keys : ["javascript"];
+  const languageOptions = useMemo<Language[]>(() => {
+    const keys = Object.keys(starterCode).filter(isLanguage) as Language[];
+    return keys.length > 0 ? keys : [DEFAULT_LANGUAGE];
   }, [starterCode]);
 
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(
-    languageOptions[0] ?? "javascript"
+  const [selectedLanguage, setSelectedLanguage] = useState<Language>(
+    languageOptions[0] ?? DEFAULT_LANGUAGE
   );
   const [code, setCode] = useState<string>(starterCode[selectedLanguage] ?? "");
   const [draftMessage, setDraftMessage] = useState("");
@@ -103,7 +108,7 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
   }, [problem.id]);
 
   useEffect(() => {
-    setSelectedLanguage(languageOptions[0] ?? "javascript");
+    setSelectedLanguage(languageOptions[0] ?? DEFAULT_LANGUAGE);
   }, [languageOptions]);
 
   useEffect(() => {
@@ -136,7 +141,7 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
   }, [sessionStatus, completionResult, isLoadingFeedback, sessionId]);
 
   const handleLanguageChange = useCallback(
-    (nextLanguage: string) => {
+    (nextLanguage: Language) => {
       setSelectedLanguage(nextLanguage);
       setCode(starterCode[nextLanguage] ?? "");
     },
@@ -292,8 +297,14 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
         : buildNitpicks(rubricRows, completionResult),
     [aiAdditionalImprovements, rubricRows, completionResult]
   );
-  const finalScore = completionResult?.final_score ?? null;
-  const didPass = finalScore !== null ? finalScore >= 30 : null;
+  const finalScore = useMemo(
+    () => completionResult?.final_score ?? null,
+    [completionResult]
+  );
+  const didPass = useMemo(
+    () => (finalScore !== null ? finalScore >= 30 : null),
+    [finalScore]
+  );
   const hasSession = Boolean(sessionId);
 
   return {

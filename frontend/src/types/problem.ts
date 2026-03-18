@@ -1,4 +1,5 @@
 import type { TestCase } from "./testcase";
+import type { Language } from "./language";
 
 export type Difficulty = "easy" | "medium" | "hard" | string;
 
@@ -8,7 +9,7 @@ export interface Problem {
   description: string;
   difficulty: Difficulty;
   category: string;
-  starter_code: Record<string, string>;
+  starter_code: Partial<Record<Language, string>>;
   is_passed?: boolean;
   test_cases: TestCase[];
 }

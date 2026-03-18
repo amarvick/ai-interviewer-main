@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import "./ProblemPageTerminal.css";
 import type { TestCase } from "@/types/testcase";
 import type { SubmissionResponse } from "@/types/submission";
+import styles from "./ProblemPageTerminal.module.css";
 
 type TestCaseStatus = "pending" | "pass" | "fail";
 
@@ -11,6 +11,7 @@ interface ProblemPageTerminalProps {
   submissions: SubmissionResponse[];
   hasSubmittedInSession: boolean;
   sessionErrors: string[];
+  isSubmitting?: boolean;
 }
 
 function prettyJson(value: unknown): string {
@@ -27,6 +28,7 @@ export default function ProblemPageTerminal({
   submissions,
   hasSubmittedInSession,
   sessionErrors,
+  isSubmitting = false,
 }: ProblemPageTerminalProps) {
   const [activeTab, setActiveTab] = useState<"results" | "submissions">(
     "results"
@@ -43,49 +45,72 @@ export default function ProblemPageTerminal({
 
   return (
     <section
-      className="terminal-panel"
+      className={styles.terminalPanel}
       aria-label="Submission and results panel"
     >
-      <header className="terminal-header">
-        <div className="terminal-tabs">
+      <header className={styles.terminalHeader}>
+        <div className={styles.terminalTabs}>
           <button
             type="button"
             className={
-              activeTab === "results" ? "tab-button active" : "tab-button"
+              activeTab === "results"
+                ? `${styles.tabButton} ${styles.tabButtonActive}`
+                : styles.tabButton
             }
             onClick={() => setActiveTab("results")}
+            disabled={isSubmitting}
           >
             Test Results
           </button>
           <button
             type="button"
             className={
-              activeTab === "submissions" ? "tab-button active" : "tab-button"
+              activeTab === "submissions"
+                ? `${styles.tabButton} ${styles.tabButtonActive}`
+                : styles.tabButton
             }
             onClick={() => setActiveTab("submissions")}
+            disabled={isSubmitting}
           >
             Submissions
           </button>
         </div>
       </header>
 
-      <div className="terminal-output">
+      <div className={styles.terminalOutput}>
+        {sessionErrors.length > 0 && (
+          <div className={styles.submissionError} role="alert">
+            {sessionErrors.map((error, index) => (
+              <p key={`${error}-${index}`}>{error}</p>
+            ))}
+          </div>
+        )}
         {activeTab === "results" && (
-          <div className="terminal-list">
+          <div className={styles.terminalList}>
             {!hasSubmittedInSession && (
-              <p className="terminal-empty">You must submit your code first</p>
+              <p className={styles.terminalEmpty}>
+                You must submit your code first
+              </p>
             )}
 
             {hasSubmittedInSession &&
               testCases.map((testCase, index) => {
                 const status = testCaseStatuses[testCase.id] ?? "pending";
                 return (
-                  <article key={testCase.id} className="terminal-item">
-                    <div className="terminal-item-title">
-                      <span className={`status-dot ${status}`} />
+                  <article key={testCase.id} className={styles.terminalItem}>
+                    <div className={styles.terminalItemTitle}>
+                      <span
+                        className={`${styles.statusDot} ${
+                          status === "pass"
+                            ? styles.statusPass
+                            : status === "fail"
+                            ? styles.statusFail
+                            : styles.statusPending
+                        }`}
+                      />
                       <strong>Case {index + 1}</strong>
                     </div>
-                    <div className="terminal-item-meta">
+                    <div className={styles.terminalItemMeta}>
                       <span>Input: {prettyJson(testCase.params)}</span>
                       <span>
                         Expected: {prettyJson(testCase.expected_output)}
@@ -94,37 +119,26 @@ export default function ProblemPageTerminal({
                   </article>
                 );
               })}
-
-            {hasSubmittedInSession && sessionErrors.length > 0 && (
-              <article className="terminal-item terminal-item-error">
-                <div className="terminal-item-title">
-                  <strong>Errors</strong>
-                </div>
-                <div className="terminal-item-meta">
-                  {sessionErrors.map((error, index) => (
-                    <span key={`${error}-${index}`}>{error}</span>
-                  ))}
-                </div>
-              </article>
-            )}
           </div>
         )}
 
         {activeTab === "submissions" && (
-          <div className="terminal-list">
+          <div className={styles.terminalList}>
             {orderedSubmissions.map((submission, index) => (
-              <article key={submission.id} className="terminal-item">
-                <div className="terminal-item-title">
+              <article key={submission.id} className={styles.terminalItem}>
+                <div className={styles.terminalItemTitle}>
                   <span
-                    className={`status-dot ${
-                      submission.result === "pass" ? "pass" : "fail"
+                    className={`${styles.statusDot} ${
+                      submission.result === "pass"
+                        ? styles.statusPass
+                        : styles.statusFail
                     }`}
                   />
                   <strong>
                     Submission #{orderedSubmissions.length - index}
                   </strong>
                 </div>
-                <div className="terminal-item-meta">
+                <div className={styles.terminalItemMeta}>
                   <span>
                     Date:{" "}
                     {submission.created_at
@@ -135,13 +149,13 @@ export default function ProblemPageTerminal({
                   <span>Result: {submission.result.toUpperCase()}</span>
                   <span>
                     Tests: {submission.tests_passed ?? 0} /{" "}
-                    {submission.tests_total ?? testCases.length}
+                    {submission.tests_total ?? 0}
                   </span>
                 </div>
               </article>
             ))}
             {orderedSubmissions.length === 0 && (
-              <p className="terminal-empty">No submissions yet.</p>
+              <p className={styles.terminalEmpty}>No submissions yet.</p>
             )}
           </div>
         )}

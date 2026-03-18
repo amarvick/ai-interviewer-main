@@ -80,7 +80,11 @@ export default function SignupPage() {
           />
         </label>
 
-        {error && <p className="status-line error">{error}</p>}
+        {error && (
+          <p className="status-line error" role="alert">
+            {error}
+          </p>
+        )}
 
         <button type="submit" disabled={loading}>
           {loading ? "Creating account..." : "Create Account"}

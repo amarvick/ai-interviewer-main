@@ -26,9 +26,13 @@ export default function ProblemWorkspace({
 
   return (
     <section className={workspaceClassName} aria-label="Coding workspace">
-      {isLoading && <p className="status-line">Loading problem...</p>}
+      {isLoading && (
+        <p className="status-line" role="status" aria-live="polite">
+          Loading problem...
+        </p>
+      )}
       {isError && (
-        <p className="status-line error">
+        <p className="status-line error" role="alert">
           {(error as Error).message || "Request failed."}
         </p>
       )}
