@@ -4,7 +4,7 @@ import { getProblemLists } from "@/services/api";
 export function useProblemListsQuery(enabled = true) {
   return useQuery({
     queryKey: ["problem-lists"],
-    queryFn: getProblemLists,
+    queryFn: ({ signal }) => getProblemLists(signal),
     enabled,
   });
 }
