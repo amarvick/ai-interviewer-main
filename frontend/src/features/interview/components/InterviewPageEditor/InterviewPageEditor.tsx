@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
-import type { Problem } from "../../types/problem";
-import ProblemPageCodeEditor from "../ProblemPageCodeEditor/ProblemPageCodeEditor";
-import ProblemPageEditorToolbar from "../ProblemPageEditorToolbar/ProblemPageEditorToolbar";
-import SplitPane from "../SplitPane/SplitPane";
-import { useInterviewSession } from "../../hooks/useInterviewSession";
+import type { Problem } from "@/types/problem";
+import {
+  ProblemPageCodeEditor,
+  ProblemPageEditorToolbar,
+} from "@/features/problem";
+import SplitPane from "@/components/SplitPane/SplitPane";
+import { useInterviewSession } from "@/features/interview/hooks/useInterviewSession";
 import "./InterviewPageEditor.css";
 
 interface InterviewPageEditorProps {

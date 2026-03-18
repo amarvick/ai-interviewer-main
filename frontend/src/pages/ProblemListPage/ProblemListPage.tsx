@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useProblemsQuery } from "../../hooks/useProblemsQuery";
+import { useProblemsQuery } from "@/features/problem/hooks/useProblemsQuery";
 import ProblemGrid from "../../components/ProblemGrid/ProblemGrid";
 import "./ProblemListPage.css";
 

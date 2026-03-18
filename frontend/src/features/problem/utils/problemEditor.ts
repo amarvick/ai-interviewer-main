@@ -1,13 +1,14 @@
-import type { SubmissionResponse } from "../types/submission";
-import type { Problem } from "../types/problem";
+import type { SubmissionResponse } from "@/types/submission";
+import type { Problem } from "@/types/problem";
 
 export type TestCaseStatus = "pending" | "pass" | "fail";
+type ProblemTestCase = Problem["test_cases"][number];
 
 export function buildInitialStatuses(
   problem: Problem
 ): Record<string, TestCaseStatus> {
   return problem.test_cases.reduce<Record<string, TestCaseStatus>>(
-    (acc, testCase) => {
+    (acc, testCase: ProblemTestCase) => {
       acc[testCase.id] = "pending";
       return acc;
     },
@@ -47,7 +48,9 @@ export function mapStatusesForResult(
     return next;
   }
 
-  const orderedIds = problem.test_cases.map((testCase) => testCase.id);
+  const orderedIds = problem.test_cases.map(
+    (testCase: ProblemTestCase) => testCase.id
+  );
   for (let i = 0; i < orderedIds.length; i += 1) {
     const id = orderedIds[i];
     if (i + 1 < failedIndex) {

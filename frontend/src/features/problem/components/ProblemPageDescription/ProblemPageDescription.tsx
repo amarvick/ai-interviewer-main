@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
-import type { Problem } from "../../types/problem";
+import type { Problem } from "@/types/problem";
 import "./ProblemPageDescription.css";
 
 interface ProblemPageDescriptionProps {
@@ -14,9 +14,7 @@ export default function ProblemPageDescription({
   const descriptionHtml = useMemo(() => {
     const raw = marked.parse(problem.description || "", {
       breaks: true,
-      mangle: false,
-      headerIds: false,
-    });
+    }) as string;
     return DOMPurify.sanitize(raw);
   }, [problem.description]);
 

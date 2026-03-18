@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ProblemListGrid from "../../components/ProblemListGrid/ProblemListGrid";
-import { useProblemListsQuery } from "../../hooks/useProblemListsQuery";
+import { useProblemListsQuery } from "@/features/problem/hooks/useProblemListsQuery";
 import { isAuthenticated, onAuthChanged } from "../../services/auth";
 import "./HomePage.css";
 

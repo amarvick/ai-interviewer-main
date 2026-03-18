@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import type { Problem } from "../../types/problem";
+import type { Problem } from "@/types/problem";
 import "./ProblemPageEditor.css";
 import ProblemPageTerminal from "../ProblemPageTerminal/ProblemPageTerminal";
 import ProblemPageCodeEditor from "../ProblemPageCodeEditor/ProblemPageCodeEditor";
 import ProblemPageEditorToolbar from "../ProblemPageEditorToolbar/ProblemPageEditorToolbar";
-import Modal from "../Modal/Modal";
-import { useProblemEditor } from "../../hooks/useProblemEditor";
+import Modal from "@/components/Modal/Modal";
+import { useProblemEditor } from "@/features/problem/hooks/useProblemEditor";
 
 interface ProblemPageEditorProps {
   problem: Problem;

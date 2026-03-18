@@ -1,26 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
-import type { Problem } from "../types/problem";
+import type { Problem } from "@/types/problem";
 import {
   completeInterviewSession,
   getInterviewSession,
   postInterviewMessage,
   runSubmission,
   startInterviewSession,
-} from "../services/api";
+} from "@/services/api";
 import type {
   InterviewCompletionResponse,
   InterviewEvaluationResponse,
   InterviewSessionDetailResponse,
-} from "../types/interview";
-import type { ChatMessage } from "../utils/interview";
+} from "@/types/interview";
+import type { ChatMessage } from "@/features/interview/utils/interview";
 import {
   buildNitpicks,
   extractAiAdditionalImprovements,
   sortMessagesByTime,
   summarizeRubric,
   toChatHistory,
-} from "../utils/interview";
+} from "@/features/interview/utils/interview";
 
 type InterviewPanelTab = "chat" | "feedback";
 

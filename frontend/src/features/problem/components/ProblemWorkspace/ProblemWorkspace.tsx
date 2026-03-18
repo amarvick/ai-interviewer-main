@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { useProblemQuery } from "../../hooks/useProblemQuery";
-import type { Problem } from "../../types/problem";
+import { useProblemQuery } from "@/features/problem/hooks/useProblemQuery";
+import type { Problem } from "@/types/problem";
 import ProblemPageDescription from "../ProblemPageDescription/ProblemPageDescription";
-import SplitPane from "../SplitPane/SplitPane";
+import SplitPane from "@/components/SplitPane/SplitPane";
 import "./ProblemWorkspace.css";
 
 interface ProblemWorkspaceProps {

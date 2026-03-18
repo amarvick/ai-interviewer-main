@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Problem } from "../types/problem";
-import type { SubmissionResponse } from "../types/submission";
-import { getSubmissions, runSubmission } from "../services/api";
-import type { TestCaseStatus } from "../utils/problemEditor";
-import { buildInitialStatuses, mapStatusesForResult } from "../utils/problemEditor";
+import type { Problem } from "@/types/problem";
+import type { SubmissionResponse } from "@/types/submission";
+import { getSubmissions, runSubmission } from "@/services/api";
+import type { TestCaseStatus } from "@/features/problem/utils/problemEditor";
+import {
+  buildInitialStatuses,
+  mapStatusesForResult,
+} from "@/features/problem/utils/problemEditor";
 
 export interface UseProblemEditorResult {
   languageOptions: string[];
@@ -49,11 +52,15 @@ export function useProblemEditor(problem: Problem): UseProblemEditorResult {
   }, [problem]);
 
   useEffect(() => {
+    const controller = new AbortController();
     const loadSubmissions = async () => {
       try {
-        const records = await getSubmissions(problem.id);
+        const records = await getSubmissions(problem.id, controller.signal);
         setSubmissions(records);
       } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
         setSessionErrors([
           error instanceof Error
             ? error.message
@@ -63,6 +70,7 @@ export function useProblemEditor(problem: Problem): UseProblemEditorResult {
     };
 
     void loadSubmissions();
+    return () => controller.abort();
   }, [problem.id]);
 
   useEffect(() => {

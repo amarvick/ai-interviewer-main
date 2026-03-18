@@ -2,40 +2,33 @@ import type {
   SubmissionPayload,
   SubmissionResponse,
 } from "../../types/submission";
-import { API_BASE_URL, parseJson } from "./api";
-import { getAuthToken } from "../auth";
-
-function authHeaders(): HeadersInit {
-  const token = getAuthToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+import {
+  API_BASE_URL,
+  buildAuthHeaders,
+  requestJson,
+} from "./api";
 
 export async function runSubmission(
   payload: SubmissionPayload
 ): Promise<SubmissionResponse> {
-  const response = await fetch(`${API_BASE_URL}/submission/submit`, {
+  return requestJson<SubmissionResponse>(`${API_BASE_URL}/submission/submit`, {
     method: "POST",
-    headers: {
+    headers: buildAuthHeaders({
       "Content-Type": "application/json",
-      ...authHeaders(),
-    },
+    }),
     body: JSON.stringify(payload),
   });
-
-  return parseJson<SubmissionResponse>(response);
 }
 
 export async function getSubmissions(
-  problemId: string
+  problemId: string,
+  signal?: AbortSignal
 ): Promise<SubmissionResponse[]> {
-  const response = await fetch(
+  return requestJson<SubmissionResponse[]>(
     `${API_BASE_URL}/submissions?problem_id=${encodeURIComponent(problemId)}`,
     {
-      headers: {
-        ...authHeaders(),
-      },
+      headers: buildAuthHeaders(),
+      signal,
     }
   );
-
-  return parseJson<SubmissionResponse[]>(response);
 }

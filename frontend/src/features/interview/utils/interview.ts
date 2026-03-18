@@ -1,4 +1,7 @@
-import type { InterviewCompletionResponse, InterviewEvaluationResponse } from "../types/interview";
+import type {
+  InterviewCompletionResponse,
+  InterviewEvaluationResponse,
+} from "@/types/interview";
 
 export interface ChatMessage {
   id: string;
