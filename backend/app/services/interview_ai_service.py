@@ -42,6 +42,11 @@ class RubricResponse(BaseModel):
     strengths: list[str] = Field(default_factory=list)
     additional_improvements: list[str] = Field(default_factory=list)
 
+
+class SubmissionFailureResponse(BaseModel):
+    assistant_message: str
+    next_steps: list[str] = Field(default_factory=list)
+
 def generate_next_interviewer_message(
     recent_messages: list[ChatTurn],
     current_code: str | None = None,
@@ -255,3 +260,89 @@ def _normalize_improvements(value: Any) -> list[str]:
         if text:
             normalized.append(text[:220])
     return normalized[:5]
+
+
+def generate_failed_submission_guidance(
+    recent_messages: list[ChatTurn],
+    failure_context: dict[str, Any],
+) -> dict[str, Any]:
+    client = _build_client()
+    transcript = "\n".join(
+        f\"{turn['role']}: {turn['content']}\"
+        for turn in recent_messages[-6:]
+        if turn.get(\"role\") and turn.get(\"content\")
+    )
+    failure_summary = _summarize_failure_context(failure_context)
+    contents = (
+        "Conversation so far:\\n"
+        f"{transcript or 'No prior messages yet.'}\\n\\n"
+        "Most recent automated test failure:\\n"
+        f"{failure_summary}"
+    )
+    if not client:
+        return _fallback_failure_guidance(failure_summary)
+    try:
+        response = client.models.generate_content(
+            model=GEMINI_MODEL_CHAT,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=(
+                    "You are an encouraging technical interviewer. "
+                    "Tests failed for the candidate's latest submission. "
+                    "Produce a short coaching response (<=90 words) "
+                    "that cites the failing test case and offers 1-2 concrete debugging steps. "
+                    "Return strict JSON with fields assistant_message and next_steps."
+                ),
+                response_mime_type="application/json",
+                response_schema=SubmissionFailureResponse,
+                temperature=0.2,
+            ),
+        )
+        parsed = cast(SubmissionFailureResponse | None, response.parsed)
+        if parsed is None:
+            raise ValueError("Missing parsed failure guidance")
+        _log_usage(response, "interview_failure_guidance")
+        return parsed.model_dump()
+    except Exception as exc:
+        logger.exception("Gemini failure guidance error")
+        if _is_quota_error(exc):
+            raise InterviewAIError(
+                "AI quota exceeded. Please check your Gemini billing/quota and try again."
+            ) from exc
+        if _is_strict_mode():
+            raise InterviewAIError(
+                f"Gemini failure guidance failed: {type(exc).__name__}"
+            ) from exc
+        return _fallback_failure_guidance(failure_summary)
+
+
+def _fallback_failure_guidance(failure_summary: str) -> dict[str, Any]:
+    return {
+        "assistant_message": (
+            "Your latest submission is still failing the automated tests. "
+            f"Here's what we know: {failure_summary}. "
+            "Please revisit your code, add a local print or dry run for that scenario, "
+            "and submit again once it passes."
+        ),
+        "next_steps": [
+            "Reproduce the failing test locally and inspect intermediate values.",
+            "Update the code to handle that scenario, then resubmit to rerun tests.",
+        ],
+    }
+
+
+def _summarize_failure_context(failure_context: dict[str, Any]) -> str:
+    index = failure_context.get("case_index")
+    total = failure_context.get("case_total")
+    params = failure_context.get("params")
+    expected = failure_context.get("expected_output")
+    error_message = failure_context.get("error_message") or "Runtime failure"
+    pieces = []
+    if index and total:
+        pieces.append(f"Test case #{index} of {total}")
+    if params is not None:
+        pieces.append(f"Input: {params}")
+    if expected is not None:
+        pieces.append(f"Expected: {expected}")
+    pieces.append(f"Observed error: {error_message}")
+    return "; ".join(str(part) for part in pieces if part)

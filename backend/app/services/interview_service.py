@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from time import perf_counter
 from typing import Any, cast
-from app.core.constants import InterviewStage
+from app.core.constants import InterviewStage, SUBMISSION_RESULT_PASS
 from app.crud.interview import (
     create_interview_evaluation,
     create_interview_message,
@@ -11,11 +11,14 @@ from app.crud.interview import (
     get_recent_evaluations_by_session_id,
     get_recent_messages_by_session_id,
 )
+from app.crud.submission import get_latest_submission
+from app.crud.testcase import get_testcases_by_problem_id
 from app.crud.problem import get_problem_by_id
 from app.services.interview_stage_engine import decide_stage_transition
 from app.services.interview_ai_service import (
     evaluate_stage_rubric,
     generate_next_interviewer_message,
+    generate_failed_submission_guidance,
 )
 
 logger = logging.getLogger(__name__)
@@ -148,6 +151,42 @@ def process_interview_message(
     )
     effective_decision = decision
 
+    submission_review = (
+        _review_latest_submission(
+            db=db,
+            session=session,
+            user_id=user_id,
+            has_submission=has_submission,
+        )
+        if has_submission
+        else None
+    )
+    if submission_review and submission_review["status"] == "fail":
+        setattr(session, "stage", "CODING")
+        session.status = "ACTIVE"
+        session.stuck_signal_count = 0
+        session.nudges_used_in_stage = 0
+        failure_text = submission_review["assistant_message"]
+        create_interview_message(
+            db=db,
+            session_id=_as_str(session.id),
+            role="assistant",
+            content=failure_text,
+            stage_at_message="CODING",
+            user_id=None,
+        )
+        db.commit()
+        logger.info(
+            "interview.service.submission_failed session_id=%s user_id=%s test_case=%s",
+            session.id,
+            user_id,
+            submission_review.get("failed_case_label"),
+        )
+        refreshed_after_failure = get_interview_session_by_id(db, _as_str(session.id))
+        if refreshed_after_failure is None:
+            return None
+        return _serialize_session_detail(refreshed_after_failure, can_code=False)
+
     previous_stage: InterviewStage = _as_stage(session.stage)
     setattr(session, "stage", effective_decision.next_stage)
     session.stuck_signal_count = effective_decision.stuck_signal_count
@@ -177,38 +216,6 @@ def process_interview_message(
         effective_decision.should_score_stage,
         has_submission,
     )
-
-    if effective_decision.should_score_stage:
-        stage_messages = [
-            {"role": _as_str(message.role), "content": _as_str(message.content)}
-            for message in session.messages
-            if _as_stage(message.stage_at_message) == previous_stage
-        ]
-        rubric = evaluate_stage_rubric(
-            stage_messages=stage_messages,
-            current_code=current_code,
-        )
-        category_total = (
-            rubric["problem_understanding_score"]
-            + rubric["approach_quality_score"]
-            + rubric["code_correctness_reasoning_score"]
-            + rubric["complexity_analysis_score"]
-            + rubric["communication_clarity_score"]
-        )
-        create_interview_evaluation(
-            db=db,
-            session_id=_as_str(session.id),
-            stage=previous_stage,
-            summary=rubric.get("summary", f"Stage {previous_stage} evaluation complete."),
-            problem_understanding_score=rubric["problem_understanding_score"],
-            approach_quality_score=rubric["approach_quality_score"],
-            code_correctness_reasoning_score=rubric["code_correctness_reasoning_score"],
-            complexity_analysis_score=rubric["complexity_analysis_score"],
-            communication_clarity_score=rubric["communication_clarity_score"],
-            total_score=category_total,
-            passed=category_total >= 30,
-            rubric_json={"source": "llm_eval", "stage": previous_stage, **rubric},
-        )
 
     full_history = _normalize_chat_history(chat_history)
     ai_context = (
@@ -277,6 +284,19 @@ def complete_interview_session(
         )
         return None
 
+    latest_submission = get_latest_submission(
+        db=db,
+        user_id=user_id,
+        problem_id=_as_str(session.problem_id),
+    )
+    final_code_snapshot = latest_submission.code_submitted if latest_submission else None
+    final_tests_passed = (
+        _as_int(latest_submission.tests_passed) if latest_submission else None
+    )
+    final_tests_total = (
+        _as_int(latest_submission.tests_total) if latest_submission else None
+    )
+
     evaluations = get_recent_evaluations_by_session_id(db, _as_str(session.id), limit=500)
     if not evaluations:
         stage_messages = [
@@ -288,7 +308,7 @@ def complete_interview_session(
             try:
                 final_rubric = evaluate_stage_rubric(
                     stage_messages=stage_messages,
-                    current_code=None,
+                    current_code=final_code_snapshot,
                 )
                 final_total = (
                     final_rubric["problem_understanding_score"]
@@ -319,7 +339,12 @@ def complete_interview_session(
                     ],
                     total_score=final_total,
                     passed=final_total >= 30,
-                    rubric_json={"source": "llm_eval_final", **final_rubric},
+                    rubric_json={
+                        "source": "llm_eval_final",
+                        "tests_passed": final_tests_passed,
+                        "tests_total": final_tests_total,
+                        **final_rubric,
+                    },
                 )
                 db.flush()
             except Exception:
@@ -396,6 +421,65 @@ def _build_recent_context(db, session_id: str) -> list[dict[str, str]]:
             },
         )
     return context
+
+
+def _review_latest_submission(db, session, user_id: str, has_submission: bool) -> dict[str, Any] | None:
+    if not has_submission:
+        return None
+    latest = get_latest_submission(
+        db=db,
+        user_id=user_id,
+        problem_id=_as_str(session.problem_id),
+    )
+    if latest is None:
+        return None
+    if _as_str(latest.result) == SUBMISSION_RESULT_PASS:
+        return {"status": "pass"}
+
+    testcases = get_testcases_by_problem_id(db, _as_str(session.problem_id))
+    tests_passed = _as_int(latest.tests_passed)
+    failing_case = None
+    if testcases and 0 <= tests_passed < len(testcases):
+        failing_case = testcases[tests_passed]
+    failure_context = {
+        "case_index": tests_passed + 1,
+        "case_total": len(testcases),
+        "params": getattr(failing_case, "params", None) if failing_case else None,
+        "expected_output": getattr(failing_case, "expected_output", None)
+        if failing_case
+        else None,
+        "language": _as_str(latest.language),
+        "error_message": _as_str(latest.error or "Test failure"),
+    }
+    guidance = generate_failed_submission_guidance(
+        recent_messages=_recent_chat_messages(session.messages),
+        failure_context=failure_context,
+    )
+    case_label = None
+    if failure_context.get("case_index") and failure_context.get("case_total"):
+        case_label = f"{failure_context['case_index']}/{failure_context['case_total']}"
+    return {
+        "status": "fail",
+        "assistant_message": guidance["assistant_message"],
+        "failed_case_label": case_label,
+    }
+
+
+def _recent_chat_messages(messages, limit: int = 6) -> list[dict[str, str]]:
+    ordered = sorted(messages, key=lambda m: m.created_at or datetime.utcnow())
+    excerpt = ordered[-limit:]
+    turns: list[dict[str, str]] = []
+    for message in excerpt:
+        role = _as_str(message.role)
+        if role not in {"user", "assistant"}:
+            continue
+        turns.append(
+            {
+                "role": "user" if role == "user" else "assistant",
+                "content": _as_str(message.content),
+            }
+        )
+    return turns
 
 
 def _normalize_chat_history(

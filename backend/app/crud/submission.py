@@ -60,6 +60,15 @@ def get_submissions(
     return query.order_by(Submission.created_at.desc()).all()
 
 
+def get_latest_submission(db: Session, user_id: str, problem_id: str) -> Submission | None:
+    return (
+        db.query(Submission)
+        .filter(Submission.user_id == user_id, Submission.problem_id == problem_id)
+        .order_by(Submission.created_at.desc())
+        .first()
+    )
+
+
 def _upsert_user_problem_progress(
     db: Session,
     user_id: str,
