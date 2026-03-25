@@ -86,6 +86,19 @@ public:
 };
 """,
     },
+    "reference_pseudocode": """Goal: Find indices of two numbers that sum to target; assume exactly one valid pair.
+
+1. Initialize map seen_indices = {}  // value -> index
+2. For each index i and value num in nums:
+     a. complement = target - num
+     b. If complement exists in seen_indices:
+           return [seen_indices[complement], i]
+     c. Otherwise store seen_indices[num] = i
+3. If loop ends without return, no valid pair (should not happen per constraints).
+Time: O(n). Space: O(n) for hash map.
+Edge cases to discuss: negative numbers, duplicates, large arrays.
+Cases to discuss IF the interviewer wants: what happens if we don't have a valid pair, or if we have less than two items. These kinds of questions that can push the interviewer to think a little more.
+""",
 }
 
 # Add this problem to these existing seeded lists when they exist.
@@ -106,6 +119,7 @@ def seed_two_sum() -> None:
                 difficulty=TWO_SUM["difficulty"],
                 category=TWO_SUM["category"],
                 starter_code=TWO_SUM["starter_code"],
+                reference_pseudocode=TWO_SUM["reference_pseudocode"],
             )
             db.add(problem)
             db.flush()
@@ -115,6 +129,7 @@ def seed_two_sum() -> None:
             problem.difficulty = TWO_SUM["difficulty"]
             problem.category = TWO_SUM["category"]
             problem.starter_code = TWO_SUM["starter_code"]
+            problem.reference_pseudocode = TWO_SUM["reference_pseudocode"]
             db.flush()
             print("Updated problem: Two Sum")
 

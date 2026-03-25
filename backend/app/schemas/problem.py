@@ -13,6 +13,7 @@ class ProblemResponse(BaseModel):
     difficulty: str
     category: str
     starter_code: dict[str, str]
+    reference_pseudocode: str | None = None
     is_passed: bool = False
     test_cases: list[TestCasePublicResponse] = Field(default_factory=list)
 

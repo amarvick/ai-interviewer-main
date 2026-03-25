@@ -134,6 +134,10 @@ def process_interview_message(
     if session is None:
         return None
 
+    problem_reference = None
+    if getattr(session, "problem", None) is not None:
+        problem_reference = getattr(session.problem, "reference_pseudocode", None)
+
     current_stage: InterviewStage = _as_stage(session.stage)
     user_turns_in_stage = sum(
         1
@@ -224,6 +228,7 @@ def process_interview_message(
     ai_message_payload = generate_next_interviewer_message(
         recent_messages=ai_context,
         current_code=current_code,
+        reference_pseudocode=problem_reference,
     )
     create_interview_message(
         db=db,
@@ -297,6 +302,10 @@ def complete_interview_session(
         _as_int(latest_submission.tests_total) if latest_submission else None
     )
 
+    problem_reference = None
+    if getattr(session, "problem", None) is not None:
+        problem_reference = getattr(session.problem, "reference_pseudocode", None)
+
     evaluations = get_recent_evaluations_by_session_id(db, _as_str(session.id), limit=500)
     if not evaluations:
         stage_messages = [
@@ -309,6 +318,7 @@ def complete_interview_session(
                 final_rubric = evaluate_stage_rubric(
                     stage_messages=stage_messages,
                     current_code=final_code_snapshot,
+                    reference_pseudocode=problem_reference,
                 )
                 final_total = (
                     final_rubric["problem_understanding_score"]

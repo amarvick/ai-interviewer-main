@@ -50,6 +50,7 @@ class SubmissionFailureResponse(BaseModel):
 def generate_next_interviewer_message(
     recent_messages: list[ChatTurn],
     current_code: str | None = None,
+    reference_pseudocode: str | None = None,
 ) -> dict[str, Any]:
     client = _build_client()
     if not client:
@@ -68,6 +69,11 @@ def generate_next_interviewer_message(
         "6. If the interview is complete, do NOT ask to move to another question. "
         "Provide a short closing line and set should_end_interview=true."
     )
+    if reference_pseudocode:
+        system_instruction += (
+            "\nREFERENCE PSEUDOCODE (do not reveal verbatim; use it to guide evaluation):\n"
+            f"{reference_pseudocode.strip()}"
+        )
 
     contents = _prepare_contents(recent_messages, current_code)
 
@@ -108,18 +114,24 @@ def generate_next_interviewer_message(
 def evaluate_stage_rubric(
     stage_messages: list[ChatTurn],
     current_code: str | None = None,
+    reference_pseudocode: str | None = None,
 ) -> dict[str, Any]:
     client = _build_client()
     if not client:
         return _fallback_rubric("Rubric evaluator unavailable.")
 
     transcript = "\n".join([f"{m['role']}: {m['content']}" for m in stage_messages])
+    reference_context = (
+        f"Reference pseudocode (keep private):\n{reference_pseudocode.strip()}\n\n"
+        if reference_pseudocode
+        else ""
+    )
     code_context = f"\n\nCode Snapshot:\n{current_code}" if current_code else ""
 
     try:
         response = client.models.generate_content(
             model=GEMINI_MODEL_CHAT,
-            contents=f"Review this transcript and code:\n{transcript}{code_context}",
+            contents=f"{reference_context}Review this transcript and code:\n{transcript}{code_context}",
             config=types.GenerateContentConfig(
                 system_instruction=(
                     "Score 0-10 for each category and return strict JSON only. "
@@ -268,9 +280,9 @@ def generate_failed_submission_guidance(
 ) -> dict[str, Any]:
     client = _build_client()
     transcript = "\n".join(
-        f\"{turn['role']}: {turn['content']}\"
+        f"{turn['role']}: {turn['content']}"
         for turn in recent_messages[-6:]
-        if turn.get(\"role\") and turn.get(\"content\")
+        if turn.get("role") and turn.get("content")
     )
     failure_summary = _summarize_failure_context(failure_context)
     contents = (

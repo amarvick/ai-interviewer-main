@@ -10,6 +10,7 @@ export interface Problem {
   difficulty: Difficulty;
   category: string;
   starter_code: Partial<Record<Language, string>>;
+  reference_pseudocode?: string | null;
   is_passed?: boolean;
   test_cases: TestCase[];
 }
