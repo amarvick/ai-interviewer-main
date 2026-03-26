@@ -1,8 +1,8 @@
 from app.core.constants import SUBMISSION_RESULT_FAIL
-from app.services.python_evaluation_service import evaluate_python_submission
-from app.services.javascript_evaluation_service import evaluate_javascript_submission
-from app.services.java_evaluation_service import evaluate_java_submission
-from app.services.cpp_evaluation_service import evaluate_cpp_submission
+from backend.app.services.language_evaluation_services.python_evaluation_service import evaluate_python_submission
+from backend.app.services.language_evaluation_services.javascript_evaluation_service import evaluate_javascript_submission
+from backend.app.services.language_evaluation_services.java_evaluation_service import evaluate_java_submission
+from backend.app.services.language_evaluation_services.cpp_evaluation_service import evaluate_cpp_submission
 
 
 def evaluate_submission(code_submitted: str, language: str, test_cases: list):
