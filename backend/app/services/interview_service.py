@@ -139,9 +139,13 @@ def process_interview_message(
 
     problem_reference = None
     reference_variants: list[dict[str, Any]] = []
+    reference_talking_points: list[dict[str, Any]] = []
     if getattr(session, "problem", None) is not None:
         problem_reference = getattr(session.problem, "reference_pseudocode", None)
         reference_variants = _get_reference_variants(session.problem)
+        reference_talking_points = (
+            getattr(session.problem, "reference_talking_points", None) or []
+        )
 
     current_stage: InterviewStage = _as_stage(session.stage)
     user_turns_in_stage = sum(
@@ -359,6 +363,7 @@ def complete_interview_session(
                         stage_messages=stage_messages,
                         current_code=final_code_snapshot,
                         reference_pseudocode=problem_reference,
+                        reference_talking_points=reference_talking_points,
                         reference_variants=reference_variants,
                         active_variant=active_variant,
                         budget_mode="lightweight"
@@ -844,7 +849,9 @@ def _build_final_feedback(evaluations: list) -> dict[str, list[str]]:
     count = float(len(evaluations))
     category_averages = {key: value / count for key, value in category_totals.items()}
     ordered_best = sorted(category_averages.items(), key=lambda item: item[1], reverse=True)
-    ordered_worst = sorted(category_averages.items(), key=lambda item: item[1])
+    ordered_low = [
+        item for item in sorted(category_averages.items(), key=lambda item: item[1]) if item[1] < 7.0
+    ]
 
     label = {
         "problem_understanding": "Problem understanding",
@@ -861,6 +868,7 @@ def _build_final_feedback(evaluations: list) -> dict[str, list[str]]:
         "communication_clarity": "Answer in short structured bullets: plan, why, tradeoff.",
     }
     ai_strengths: list[str] = []
+    ai_improvements: list[str] = []
     for evaluation in reversed(evaluations):
         rubric_json = getattr(evaluation, "rubric_json", None)
         if isinstance(rubric_json, dict):
@@ -870,12 +878,27 @@ def _build_final_feedback(evaluations: list) -> dict[str, list[str]]:
                     text = str(item).strip()
                     if text:
                         ai_strengths.append(text)
+            raw_improvements = rubric_json.get("additional_improvements")
+            if isinstance(raw_improvements, list):
+                for item in raw_improvements:
+                    text = str(item).strip()
+                    if text:
+                        ai_improvements.append(text)
 
     strengths = list(dict.fromkeys(ai_strengths))[:3]
     if not strengths:
         strengths = [f"{label[key]} ({avg:.2f}/10)" for key, avg in ordered_best[:2]]
-    gap_candidates = [item for item in ordered_worst if item[1] < 7.0] or ordered_worst[:2]
-    gaps = [f"{label[key]} ({avg:.2f}/10)" for key, avg in gap_candidates[:2]]
-    next_steps = [next_step_by_gap[key] for key, _ in gap_candidates[:3]]
+    improvements_unique = list(dict.fromkeys(ai_improvements))
+    gaps = improvements_unique[:3]
+    next_steps = improvements_unique[3:6]
+    if not gaps:
+        fallback_low = ordered_low or ordered_best[-2:]
+        gaps = [
+            f"Focus on {label[key].lower()} by {next_step_by_gap[key]}"
+            for key, _ in fallback_low[:2]
+        ]
+    if not next_steps:
+        target_categories = ordered_low[:3] or ordered_best[:2]
+        next_steps = [next_step_by_gap[key] for key, _ in target_categories]
 
     return {"strengths": strengths, "gaps": gaps, "next_steps": next_steps}

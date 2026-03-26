@@ -80,6 +80,39 @@ Time: O(n^2). Space: O(1).
     },
 ]
 
+REFERENCE_TALKING_POINTS = [
+    {
+        "id": "hash_map_tradeoff",
+        "title": "Hash map trade-off",
+        "description": "Explain why a one-pass hash map hits O(n) time with O(n) extra space and how that compares to brute force or two-pass variants.",
+        "bonus_mentions": [
+            "time versus space",
+            "single scan",
+            "dictionary lookups",
+        ],
+    },
+    {
+        "id": "duplicate_inputs",
+        "title": "Handling duplicates & indices",
+        "description": "Clarify how the algorithm avoids reusing the same index twice and still supports duplicate values in the array.",
+        "bonus_mentions": [
+            "cannot reuse same element",
+            "nums[i] == nums[j]",
+            "store index not value",
+        ],
+    },
+    {
+        "id": "two_pointer_alternative",
+        "title": "Two-pointer alternative",
+        "description": "Discuss when sorting + two pointers could work, why it changes the index requirement, and why hash map is preferred when original indices matter.",
+        "bonus_mentions": [
+            "sort then two pointers",
+            "index order",
+            "O(n log n)",
+        ],
+    },
+]
+
 TWO_SUM = {
     "title": "Two Sum",
     "category": "Arrays, Strings and Hashing",
@@ -161,6 +194,7 @@ Edge cases to discuss: negative numbers, duplicates, large arrays.
 Cases to discuss IF the interviewer wants: what happens if we don't have a valid pair, or if we have less than two items. These kinds of questions that can push the interviewer to think a little more.
 """,
     "reference_pseudocode_variants": REFERENCE_VARIANTS,
+    "reference_talking_points": REFERENCE_TALKING_POINTS,
 }
 
 # Add this problem to these existing seeded lists when they exist.
@@ -183,6 +217,7 @@ def seed_two_sum() -> None:
                 starter_code=TWO_SUM["starter_code"],
                 reference_pseudocode=TWO_SUM["reference_pseudocode"],
                 reference_pseudocode_variants=TWO_SUM["reference_pseudocode_variants"],
+                reference_talking_points=TWO_SUM["reference_talking_points"],
             )
             db.add(problem)
             db.flush()
@@ -194,6 +229,7 @@ def seed_two_sum() -> None:
             problem.starter_code = TWO_SUM["starter_code"]
             problem.reference_pseudocode = TWO_SUM["reference_pseudocode"]
             problem.reference_pseudocode_variants = TWO_SUM["reference_pseudocode_variants"]
+            problem.reference_talking_points = TWO_SUM["reference_talking_points"]
             db.flush()
             print("Updated problem: Two Sum")
 

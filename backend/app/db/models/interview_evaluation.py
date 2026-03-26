@@ -12,11 +12,11 @@ def generate_interview_evaluation_id() -> str:
 class InterviewEvaluation(Base):
     __tablename__ = "interview_evaluations"
     __table_args__ = (
-        CheckConstraint("problem_understanding_score BETWEEN 0 AND 2", name="ck_eval_problem_understanding"),
-        CheckConstraint("approach_quality_score BETWEEN 0 AND 2", name="ck_eval_approach_quality"),
-        CheckConstraint("code_correctness_reasoning_score BETWEEN 0 AND 2", name="ck_eval_code_reasoning"),
-        CheckConstraint("complexity_analysis_score BETWEEN 0 AND 2", name="ck_eval_complexity"),
-        CheckConstraint("communication_clarity_score BETWEEN 0 AND 2", name="ck_eval_communication"),
+        CheckConstraint("problem_understanding_score BETWEEN 0 AND 10", name="ck_eval_problem_understanding"),
+        CheckConstraint("approach_quality_score BETWEEN 0 AND 10", name="ck_eval_approach_quality"),
+        CheckConstraint("code_correctness_reasoning_score BETWEEN 0 AND 10", name="ck_eval_code_reasoning"),
+        CheckConstraint("complexity_analysis_score BETWEEN 0 AND 10", name="ck_eval_complexity"),
+        CheckConstraint("communication_clarity_score BETWEEN 0 AND 10", name="ck_eval_communication"),
     )
 
     id = Column(

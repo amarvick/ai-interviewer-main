@@ -67,7 +67,7 @@ def generate_next_interviewer_message(
     client = _build_client()
     if not client:
         if _is_strict_mode(): raise InterviewAIError("Gemini API key missing.")
-        return _fallback_interviewer_message()
+        return _fallback_interviewer_message(), 0
 
     system_instruction = (
         "You are an elite Technical Interviewer. Guide the candidate through an algorithm interview.\n\n"
@@ -146,13 +146,14 @@ def evaluate_stage_rubric(
     stage_messages: list[ChatTurn],
     current_code: str | None = None,
     reference_pseudocode: str | None = None,
+    reference_talking_points: list[dict[str, Any]] | None = None,
     reference_variants: list[dict[str, Any]] | None = None,
     active_variant: dict[str, Any] | None = None,
     budget_mode: Literal["default", "lightweight"] = "default",
 ) -> tuple[dict[str, Any], int]:
     client = _build_client()
     if not client:
-        return _fallback_rubric("Rubric evaluator unavailable.")
+        return _fallback_rubric("Rubric evaluator unavailable."), 0
 
     transcript = "\n".join([f"{m['role']}: {m['content']}" for m in stage_messages])
     reference_context = ""
@@ -171,6 +172,22 @@ def evaluate_stage_rubric(
             f"- {variant.get('title', 'Variant')}: {variant.get('pseudocode', '')[:200]}"
             for variant in reference_variants[:2]
         ) + "\n\n"
+    if reference_talking_points:
+        talking_points_lines: list[str] = []
+        for point in reference_talking_points[:5]:
+            title = point.get("title") or point.get("id") or "Talking point"
+            description = point.get("description", "")
+            bonus_mentions = point.get("bonus_mentions") or point.get("bonus_examples")
+            suffix = ""
+            if isinstance(bonus_mentions, list) and bonus_mentions:
+                suffix = f" (Bonus mentions: {', '.join(bonus_mentions[:3])})"
+            talking_points_lines.append(f"- {title}: {description}{suffix}".strip())
+        if talking_points_lines:
+            reference_context += (
+                "Key theoretical talking points for this problem:\n"
+                + "\n".join(talking_points_lines)
+                + "\n\n"
+            )
     code_context = f"\n\nCode Snapshot:\n{current_code}" if current_code else ""
 
     try:
@@ -221,7 +238,7 @@ def _build_rubric_instruction(budget_mode: Literal["default", "lightweight"]) ->
         "problem_understanding_band, approach_quality_band, code_correctness_reasoning_band, "
         "complexity_analysis_band, communication_clarity_band, summary, strengths (2-4 items), "
         "additional_improvements (3-5 items). "
-        "Highlight wins first, then the biggest gap."
+        "Keep the tone encouraging: celebrate wins first, then suggest one forward-looking improvement."
     )
     if budget_mode == "lightweight":
         instruction += " Keep summary under 60 words and avoid restating the problem."
