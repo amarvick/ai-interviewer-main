@@ -26,6 +26,7 @@ class InterviewSession(Base):
     final_score = Column(Float, nullable=True)
     stuck_signal_count = Column(Integer, nullable=False, default=0)
     nudges_used_in_stage = Column(Integer, nullable=False, default=0)
+    ai_token_total = Column(Integer, nullable=False, default=0)
 
     started_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)

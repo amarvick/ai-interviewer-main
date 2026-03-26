@@ -23,6 +23,9 @@ from app.services.interview_ai_service import (
 
 logger = logging.getLogger(__name__)
 
+AI_TOKEN_LIGHTWEIGHT_THRESHOLD = 12000
+AI_TOKEN_HARD_LIMIT = 16000
+
 # TODO - put these in consts/utils
 def _as_stage(value: Any) -> InterviewStage:
     stage = str(value)
@@ -228,13 +231,20 @@ def process_interview_message(
         full_history if full_history else _build_recent_context(db, _as_str(session.id))
     )
     active_variant = _match_reference_variant_from_code(current_code, reference_variants)
-    ai_message_payload = generate_next_interviewer_message(
-        recent_messages=ai_context,
-        current_code=current_code,
-        reference_pseudocode=problem_reference,
-        reference_variants=reference_variants,
-        active_variant=active_variant,
-    )
+    budget_mode = _determine_budget_mode(session)
+    usage_tokens = 0
+    if budget_mode == "exhausted":
+        ai_message_payload = _low_budget_assistant_message(_as_stage(session.stage))
+    else:
+        ai_message_payload, usage_tokens = generate_next_interviewer_message(
+            recent_messages=ai_context,
+            current_code=current_code,
+            reference_pseudocode=problem_reference,
+            reference_variants=reference_variants,
+            active_variant=active_variant,
+            budget_mode="lightweight" if budget_mode == "lightweight" else "default",
+        )
+        _record_ai_usage(session, usage_tokens)
     create_interview_message(
         db=db,
         session_id=_as_str(session.id),
@@ -337,13 +347,25 @@ def complete_interview_session(
                 active_variant = _match_reference_variant_from_code(
                     final_code_snapshot, reference_variants
                 )
-                final_rubric = evaluate_stage_rubric(
-                    stage_messages=stage_messages,
-                    current_code=final_code_snapshot,
-                    reference_pseudocode=problem_reference,
-                    reference_variants=reference_variants,
-                    active_variant=active_variant,
-                )
+                budget_mode = _determine_budget_mode(session)
+                if budget_mode == "exhausted":
+                    final_rubric = _build_budget_rubric_fallback(
+                        tests_passed=final_tests_passed,
+                        tests_total=final_tests_total,
+                    )
+                    rubric_tokens = 0
+                else:
+                    final_rubric, rubric_tokens = evaluate_stage_rubric(
+                        stage_messages=stage_messages,
+                        current_code=final_code_snapshot,
+                        reference_pseudocode=problem_reference,
+                        reference_variants=reference_variants,
+                        active_variant=active_variant,
+                        budget_mode="lightweight"
+                        if budget_mode == "lightweight"
+                        else "default",
+                    )
+                    _record_ai_usage(session, rubric_tokens)
                 final_total = (
                     final_rubric["problem_understanding_score"]
                     + final_rubric["approach_quality_score"]
@@ -686,6 +708,76 @@ def _build_local_summary(variant: dict[str, Any], total_score: int) -> str:
             "It is acceptable but slower than the optimal hash map approach, so call out trade-offs more explicitly."
         )
     return " ".join(pieces) + f" Total score: {total_score}/50."
+
+
+def _determine_budget_mode(session) -> str:
+    total = _as_int(getattr(session, "ai_token_total", 0))
+    if total >= AI_TOKEN_HARD_LIMIT:
+        return "exhausted"
+    if total >= AI_TOKEN_LIGHTWEIGHT_THRESHOLD:
+        return "lightweight"
+    return "default"
+
+
+def _record_ai_usage(session, tokens_used: int) -> None:
+    if not tokens_used:
+        return
+    current = _as_int(getattr(session, "ai_token_total", 0))
+    session.ai_token_total = current + int(tokens_used)
+
+
+def _low_budget_assistant_message(stage: InterviewStage) -> dict[str, Any]:
+    return {
+        "assistant_message": (
+            "We're nearly out of time, so let's keep responses short. "
+            "Share any final thoughts or edge cases, and I'll summarize."
+        ),
+        "checklist": {
+            "clarified_constraints": stage != "INTRO",
+            "proposed_approach": stage not in {"INTRO", "CLARIFICATION"},
+            "complexity_analyzed": stage
+            in {"COMPLEXITY_DISCUSSION", "FOLLOW_UP", "FEEDBACK", "COMPLETE"},
+            "ready_to_code": stage in {"CODING", "FOLLOW_UP", "FEEDBACK", "COMPLETE"},
+        },
+        "can_code": stage in {"CODING", "FOLLOW_UP", "FEEDBACK", "COMPLETE"},
+        "internal_thought": "Budget exhausted fallback response.",
+        "should_end_interview": stage in {"FEEDBACK", "COMPLETE"},
+    }
+
+
+def _build_budget_rubric_fallback(
+    tests_passed: int | None, tests_total: int | None
+) -> dict[str, Any]:
+    all_tests_passed = (
+        tests_passed is not None
+        and tests_total is not None
+        and tests_total > 0
+        and tests_passed >= tests_total
+    )
+    base_score = 9 if all_tests_passed else 7
+    summary = (
+        "AI token budget exhausted before generating a rubric. "
+        "Using deterministic fallback based on submission results."
+    )
+    return {
+        "problem_understanding_score": base_score - 1,
+        "approach_quality_score": base_score,
+        "code_correctness_reasoning_score": base_score + (1 if all_tests_passed else 0),
+        "complexity_analysis_score": base_score - 1,
+        "communication_clarity_score": base_score - 1,
+        "summary": summary,
+        "strengths": [
+            "Submission passed all automated tests."
+            if all_tests_passed
+            else "Submission progress recorded before budget ran out.",
+            "Maintained steady communication through the interview.",
+        ],
+        "additional_improvements": [
+            "Highlight at least two edge cases before coding.",
+            "State time/space complexity explicitly even when the solution is optimal.",
+            "Share one trade-off versus an alternative approach.",
+        ],
+    }
 
 
 def _normalize_chat_history(
