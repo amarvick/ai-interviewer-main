@@ -34,6 +34,7 @@ export default function InterviewPageEditor({
     error,
     rubricRows,
     nitpicks,
+    feedbackSummary,
     finalScore,
     didPass,
     hasSession,
@@ -134,7 +135,7 @@ export default function InterviewPageEditor({
                       <p className="chat-bubble-role">
                         {message.role === "ai" ? "Interviewer" : "You"}
                       </p>
-                      <p>{message.content}</p>
+                      <p className="chat-bubble-text">{message.content}</p>
                     </article>
                   ))}
                 </div>
@@ -204,16 +205,33 @@ export default function InterviewPageEditor({
                     {completionResult && (
                       <div className="feedback-block">
                         <h4>Summary</h4>
-                        <ul className="feedback-list">
-                          {completionResult.strengths.map((item) => (
-                            <li key={`strength-${item}`}>{item}</li>
-                          ))}
-                        </ul>
-                        <ul className="feedback-list">
-                          {completionResult.gaps.map((item) => (
-                            <li key={`gap-${item}`}>{item}</li>
-                          ))}
-                        </ul>
+                        {feedbackSummary ? (
+                          <p className="feedback-summary-text">{feedbackSummary}</p>
+                        ) : (
+                          <p className="feedback-summary-text">
+                            Highlights and key opportunities are summarized below.
+                          </p>
+                        )}
+                        {completionResult.strengths.length > 0 && (
+                          <>
+                            <h5>Highlights</h5>
+                            <ul className="feedback-list">
+                              {completionResult.strengths.map((item) => (
+                                <li key={`strength-${item}`}>{item}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                        {completionResult.gaps.length > 0 && (
+                          <>
+                            <h5>Key Opportunities</h5>
+                            <ul className="feedback-list">
+                              {completionResult.gaps.map((item) => (
+                                <li key={`gap-${item}`}>{item}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
                       </div>
                     )}
                     <div className="feedback-block">

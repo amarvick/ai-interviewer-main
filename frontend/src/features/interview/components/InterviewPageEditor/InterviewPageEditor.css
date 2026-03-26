@@ -113,6 +113,10 @@
   margin: 0;
 }
 
+.chat-bubble-text {
+  white-space: pre-line;
+}
+
 .interview-chat-empty {
   margin: 0;
   color: #9bb0e6;

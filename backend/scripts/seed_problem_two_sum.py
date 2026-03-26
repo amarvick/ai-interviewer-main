@@ -114,6 +114,7 @@ REFERENCE_TALKING_POINTS = [
 ]
 
 TWO_SUM = {
+    "slug": "two-sum",
     "title": "Two Sum",
     "category": "Arrays, Strings and Hashing",
     "difficulty": "Easy",
@@ -206,10 +207,19 @@ def seed_two_sum() -> None:
 
     db = SessionLocal()
     try:
-        problem = db.query(Problem).filter(Problem.title == TWO_SUM["title"]).first()
+        problem = (
+            db.query(Problem)
+            .filter(Problem.slug == TWO_SUM["slug"])
+            .first()
+        )
+        if problem is None:
+            problem = (
+                db.query(Problem).filter(Problem.title == TWO_SUM["title"]).first()
+            )
 
         if problem is None:
             problem = Problem(
+                slug=TWO_SUM["slug"],
                 title=TWO_SUM["title"],
                 description=TWO_SUM["description"],
                 difficulty=TWO_SUM["difficulty"],
@@ -230,6 +240,7 @@ def seed_two_sum() -> None:
             problem.reference_pseudocode = TWO_SUM["reference_pseudocode"]
             problem.reference_pseudocode_variants = TWO_SUM["reference_pseudocode_variants"]
             problem.reference_talking_points = TWO_SUM["reference_talking_points"]
+            problem.slug = TWO_SUM["slug"]
             db.flush()
             print("Updated problem: Two Sum")
 

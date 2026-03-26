@@ -1,3 +1,4 @@
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.db.models.problem import Problem
 from app.db.models.problem_list import ProblemList
@@ -6,7 +7,11 @@ from app.db.models.user_problem import UserProblem
 
 # For problem page
 def get_problem_by_id(db, problem_id: str):
-    return db.query(Problem).filter(Problem.id == problem_id).first()
+    return (
+        db.query(Problem)
+        .filter(or_(Problem.id == problem_id, Problem.slug == problem_id))
+        .first()
+    )
 
 # For home page
 def get_problem_lists(db: Session):

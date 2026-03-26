@@ -10,6 +10,7 @@ export default function ProblemCard({ problem }: ProblemCardProps) {
   const category = problem.category.trim();
   const difficulty = String(problem.difficulty).trim();
   const isPassed = Boolean(problem.is_passed);
+  const problemSlug = problem.slug || problem.id;
 
   return (
     <article
@@ -40,11 +41,11 @@ export default function ProblemCard({ problem }: ProblemCardProps) {
       </div>
 
       <div className="problem-card-actions">
-        <Link to={`/problem/${problem.id}`} className="problem-card-action primary">
+        <Link to={`/problem/${problemSlug}`} className="problem-card-action primary">
           Problem
         </Link>
         <Link
-          to={`/interview-problem/${problem.id}`}
+          to={`/interview-problem/${problemSlug}`}
           className="problem-card-action secondary"
         >
           Interview

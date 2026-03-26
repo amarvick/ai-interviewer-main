@@ -126,3 +126,22 @@ export function extractAiAdditionalImprovements(
   }
   return [];
 }
+
+export function extractLatestSummary(
+  evaluations: InterviewEvaluationResponse[]
+): string | null {
+  const ordered = [...evaluations].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+  for (const evaluation of ordered) {
+    if (typeof evaluation.summary === "string" && evaluation.summary.trim().length) {
+      return evaluation.summary.trim();
+    }
+    const raw = (evaluation.rubric_json ?? {}) as Record<string, unknown>;
+    const candidate = raw.summary;
+    if (typeof candidate === "string" && candidate.trim().length) {
+      return candidate.trim();
+    }
+  }
+  return null;
+}

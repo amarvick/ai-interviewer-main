@@ -114,7 +114,7 @@ export default function SplitPane({
       className={`split-pane split-pane--${orientation}${
         className ? ` ${className}` : ""
       }`}
-      style={{ ["--primary-size" as string]: `${primarySize}%` }}
+      style={{ ["--primary-size" as string]: primarySize }}
     >
       <div className="split-pane-primary">{primary}</div>
 

@@ -26,9 +26,9 @@ export async function getProblemsByProblemListId(
   );
 }
 
-export async function getProblemById(
-  problemId: string,
+export async function getProblemBySlug(
+  problemSlug: string,
   signal?: AbortSignal
 ): Promise<Problem> {
-  return requestJson<Problem>(`${API_BASE_URL}/problem/${problemId}`, { signal });
+  return requestJson<Problem>(`${API_BASE_URL}/problem/${problemSlug}`, { signal });
 }

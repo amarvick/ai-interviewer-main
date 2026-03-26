@@ -675,6 +675,7 @@ def _maybe_create_local_evaluation(
             "tests_passed": tests_passed,
             "tests_total": tests_total,
             "reference_variant": matched_variant,
+            "summary": summary,
             "strengths": strengths,
             "additional_improvements": improvements,
         },

@@ -45,11 +45,11 @@ def get_problems_from_problem_list(
         problem.is_passed = problem.id in passed_problem_ids
     return {"name": list_name, "problems": problems}
 
-@router.get("/problem/{problem_id}", response_model=ProblemResponse)
-def get_problem_by_id(problem_id: str, db: Session = Depends(get_db)):
-    problem = get_problem_by_id_record(db, problem_id)
+@router.get("/problem/{problem_identifier}", response_model=ProblemResponse)
+def get_problem_by_id(problem_identifier: str, db: Session = Depends(get_db)):
+    problem = get_problem_by_id_record(db, problem_identifier)
     if problem is None:
         raise HTTPException(status_code=404, detail="Problem not found")
-    test_cases = get_public_testcases_by_problem_id(db, problem_id)
+    test_cases = get_public_testcases_by_problem_id(db, problem.id)
     problem.test_cases = test_cases
     return problem

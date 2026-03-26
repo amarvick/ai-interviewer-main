@@ -5,12 +5,20 @@
 }
 
 .split-pane--vertical {
-  grid-template-columns: minmax(260px, var(--primary-size)) 10px minmax(0, 1fr);
+  grid-template-columns: minmax(
+      260px,
+      calc(var(--primary-size, 45) * 1%)
+    )
+    10px minmax(0, 1fr);
   align-items: stretch;
 }
 
 .split-pane--horizontal {
-  grid-template-rows: minmax(160px, var(--primary-size)) 10px minmax(160px, 1fr);
+  grid-template-rows: minmax(
+      160px,
+      calc(var(--primary-size, 45) * 1%)
+    )
+    10px minmax(160px, 1fr);
   align-items: stretch;
 }
 

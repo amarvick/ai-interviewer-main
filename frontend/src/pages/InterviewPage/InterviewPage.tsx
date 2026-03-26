@@ -4,11 +4,11 @@ import { ProblemWorkspace } from "@/features/problem";
 import type { Problem } from "@/types/problem";
 
 export default function InterviewPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
 
   return (
     <ProblemWorkspace
-      problemId={id ?? ""}
+      problemSlug={slug ?? ""}
       splitDefaultPrimarySize={30}
       splitMinPrimarySize={22}
       splitMaxPrimarySize={55}

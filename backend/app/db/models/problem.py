@@ -14,6 +14,7 @@ class Problem(Base):
 
     id = Column(String(64), primary_key=True, index=True, default=generate_problem_id)
     title = Column(String(100), nullable=False)
+    slug = Column(String(120), nullable=False, unique=True, index=True)
     description = Column(Text, nullable=False)
     category = Column(String(50), index=True, nullable=False)
     difficulty = Column(String(20), index=True, nullable=False)

@@ -5,6 +5,7 @@ export type Difficulty = "easy" | "medium" | "hard" | string;
 
 export interface Problem {
   id: string;
+  slug: string;
   title: string;
   description: string;
   difficulty: Difficulty;

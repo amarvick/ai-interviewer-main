@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { getProblemById } from "@/services/api";
+import { getProblemBySlug } from "@/services/api";
 
-export function useProblemQuery(problemId: string) {
+export function useProblemQuery(problemSlug: string) {
   return useQuery({
-    queryKey: ["problem", problemId],
-    queryFn: ({ signal }) => getProblemById(problemId, signal),
-    enabled: Boolean(problemId),
+    queryKey: ["problem", problemSlug],
+    queryFn: ({ signal }) => getProblemBySlug(problemSlug, signal),
+    enabled: Boolean(problemSlug),
   });
 }

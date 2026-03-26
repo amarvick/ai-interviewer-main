@@ -3,11 +3,11 @@ import { ProblemWorkspace, ProblemPageEditor } from "@/features/problem";
 import type { Problem } from "@/types/problem";
 
 export default function ProblemPage() {
-  const { id } = useParams();
+  const { slug } = useParams();
 
   return (
     <ProblemWorkspace
-      problemId={id ?? ""}
+      problemSlug={slug ?? ""}
       secondaryComponent={(problem: Problem) => (
         <ProblemPageEditor problem={problem} />
       )}

@@ -8,6 +8,7 @@ from app.schemas.testcase import TestCasePublicResponse
 
 class ProblemResponse(BaseModel):
     id: str
+    slug: str
     title: str
     description: str
     difficulty: str

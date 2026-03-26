@@ -6,7 +6,7 @@ import SplitPane from "@/components/SplitPane/SplitPane";
 import "./ProblemWorkspace.css";
 
 interface ProblemWorkspaceProps {
-  problemId: string;
+  problemSlug: string;
   secondaryComponent: (problem: Problem) => ReactNode;
   workspaceClassName?: string;
   splitDefaultPrimarySize?: number;
@@ -15,14 +15,14 @@ interface ProblemWorkspaceProps {
 }
 
 export default function ProblemWorkspace({
-  problemId,
+  problemSlug,
   secondaryComponent,
   workspaceClassName = "problem-workspace",
   splitDefaultPrimarySize = 42,
   splitMinPrimarySize = 28,
-  splitMaxPrimarySize = 72,
+  splitMaxPrimarySize = 88,
 }: ProblemWorkspaceProps) {
-  const { data, isLoading, isError, error } = useProblemQuery(problemId);
+  const { data, isLoading, isError, error } = useProblemQuery(problemSlug);
 
   return (
     <section className={workspaceClassName} aria-label="Coding workspace">

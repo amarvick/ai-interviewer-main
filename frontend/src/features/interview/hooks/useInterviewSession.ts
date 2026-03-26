@@ -17,6 +17,7 @@ import type { ChatMessage } from "@/features/interview/utils/interview";
 import {
   buildNitpicks,
   extractAiAdditionalImprovements,
+  extractLatestSummary,
   sortMessagesByTime,
   summarizeRubric,
   toChatHistory,
@@ -46,6 +47,7 @@ export interface UseInterviewSessionResult {
   error: string | null;
   rubricRows: ReturnType<typeof summarizeRubric>;
   nitpicks: string[];
+  feedbackSummary: string | null;
   finalScore: number | null;
   didPass: boolean | null;
   hasSession: boolean;
@@ -297,6 +299,10 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
         : buildNitpicks(rubricRows, completionResult),
     [aiAdditionalImprovements, rubricRows, completionResult]
   );
+  const feedbackSummary = useMemo(
+    () => extractLatestSummary(evaluations),
+    [evaluations]
+  );
   const finalScore = useMemo(
     () => completionResult?.final_score ?? null,
     [completionResult]
@@ -324,6 +330,7 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
     error,
     rubricRows,
     nitpicks,
+    feedbackSummary,
     finalScore,
     didPass,
     hasSession,
