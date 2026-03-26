@@ -323,12 +323,23 @@ def complete_interview_session(
 
     problem_reference = None
     reference_variants: list[dict[str, Any]] = []
+    reference_talking_points: list[dict[str, Any]] = []
     if getattr(session, "problem", None) is not None:
         problem_reference = getattr(session.problem, "reference_pseudocode", None)
         reference_variants = _get_reference_variants(session.problem)
+        reference_talking_points = (
+            getattr(session.problem, "reference_talking_points", None) or []
+        )
+
+    stage_messages = [
+        {"role": _as_str(message.role), "content": _as_str(message.content)}
+        for message in session.messages
+        if _as_str(message.role) in {"user", "assistant"}
+    ]
+    has_transcript = bool(stage_messages)
 
     evaluations = get_recent_evaluations_by_session_id(db, _as_str(session.id), limit=500)
-    if not evaluations:
+    if not evaluations and not has_transcript:
         created_local_eval = _maybe_create_local_evaluation(
             db=db,
             session=session,
@@ -340,12 +351,7 @@ def complete_interview_session(
                 db, _as_str(session.id), limit=500
             )
 
-    if not evaluations:
-        stage_messages = [
-            {"role": _as_str(message.role), "content": _as_str(message.content)}
-            for message in session.messages
-            if _as_str(message.role) in {"user", "assistant"}
-        ]
+    if not evaluations and has_transcript:
         if stage_messages:
             try:
                 active_variant = _match_reference_variant_from_code(
@@ -413,6 +419,16 @@ def complete_interview_session(
                     "interview.service.complete.final_rubric_failed session_id=%s",
                     _as_str(session.id),
                 )
+                fallback_created = _maybe_create_local_evaluation(
+                    db=db,
+                    session=session,
+                    latest_submission=latest_submission,
+                    reference_variants=reference_variants,
+                )
+                if fallback_created:
+                    evaluations = get_recent_evaluations_by_session_id(
+                        db, _as_str(session.id), limit=500
+                    )
         evaluations = get_recent_evaluations_by_session_id(
             db, _as_str(session.id), limit=500
         )
