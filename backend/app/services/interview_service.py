@@ -135,8 +135,10 @@ def process_interview_message(
         return None
 
     problem_reference = None
+    reference_variants: list[dict[str, Any]] = []
     if getattr(session, "problem", None) is not None:
         problem_reference = getattr(session.problem, "reference_pseudocode", None)
+        reference_variants = _get_reference_variants(session.problem)
 
     current_stage: InterviewStage = _as_stage(session.stage)
     user_turns_in_stage = sum(
@@ -225,10 +227,13 @@ def process_interview_message(
     ai_context = (
         full_history if full_history else _build_recent_context(db, _as_str(session.id))
     )
+    active_variant = _match_reference_variant_from_code(current_code, reference_variants)
     ai_message_payload = generate_next_interviewer_message(
         recent_messages=ai_context,
         current_code=current_code,
         reference_pseudocode=problem_reference,
+        reference_variants=reference_variants,
+        active_variant=active_variant,
     )
     create_interview_message(
         db=db,
@@ -303,10 +308,24 @@ def complete_interview_session(
     )
 
     problem_reference = None
+    reference_variants: list[dict[str, Any]] = []
     if getattr(session, "problem", None) is not None:
         problem_reference = getattr(session.problem, "reference_pseudocode", None)
+        reference_variants = _get_reference_variants(session.problem)
 
     evaluations = get_recent_evaluations_by_session_id(db, _as_str(session.id), limit=500)
+    if not evaluations:
+        created_local_eval = _maybe_create_local_evaluation(
+            db=db,
+            session=session,
+            latest_submission=latest_submission,
+            reference_variants=reference_variants,
+        )
+        if created_local_eval:
+            evaluations = get_recent_evaluations_by_session_id(
+                db, _as_str(session.id), limit=500
+            )
+
     if not evaluations:
         stage_messages = [
             {"role": _as_str(message.role), "content": _as_str(message.content)}
@@ -315,10 +334,15 @@ def complete_interview_session(
         ]
         if stage_messages:
             try:
+                active_variant = _match_reference_variant_from_code(
+                    final_code_snapshot, reference_variants
+                )
                 final_rubric = evaluate_stage_rubric(
                     stage_messages=stage_messages,
                     current_code=final_code_snapshot,
                     reference_pseudocode=problem_reference,
+                    reference_variants=reference_variants,
+                    active_variant=active_variant,
                 )
                 final_total = (
                     final_rubric["problem_understanding_score"]
@@ -490,6 +514,178 @@ def _recent_chat_messages(messages, limit: int = 6) -> list[dict[str, str]]:
             }
         )
     return turns
+
+
+def _get_reference_variants(problem) -> list[dict[str, Any]]:
+    raw_variants = getattr(problem, "reference_pseudocode_variants", None)
+    normalized: list[dict[str, Any]] = []
+    if isinstance(raw_variants, list) and raw_variants:
+        for index, variant in enumerate(raw_variants):
+            if not isinstance(variant, dict):
+                continue
+            normalized.append(
+                {
+                    "id": str(variant.get("id") or f"variant_{index+1}"),
+                    "title": str(variant.get("title") or f"Variant {index+1}"),
+                    "pseudocode": str(variant.get("pseudocode") or ""),
+                    "is_optimal": bool(variant.get("is_optimal", False)),
+                    "match_signals": [
+                        str(signal).lower()
+                        for signal in (variant.get("match_signals") or [])
+                        if isinstance(signal, str) and signal.strip()
+                    ],
+                    "complexity": (
+                        str(variant.get("complexity")).strip()
+                        if variant.get("complexity")
+                        else None
+                    ),
+                    "notes": (
+                        str(variant.get("notes")).strip()
+                        if variant.get("notes")
+                        else None
+                    ),
+                    "strengths": [
+                        str(item).strip()
+                        for item in (variant.get("strengths") or [])
+                        if str(item).strip()
+                    ],
+                    "improvements": [
+                        str(item).strip()
+                        for item in (variant.get("improvements") or [])
+                        if str(item).strip()
+                    ],
+                }
+            )
+    elif getattr(problem, "reference_pseudocode", None):
+        normalized.append(
+            {
+                "id": "primary",
+                "title": "Reference solution",
+                "pseudocode": str(problem.reference_pseudocode),
+                "is_optimal": True,
+                "match_signals": [],
+                "strengths": [],
+                "improvements": [],
+                "complexity": None,
+                "notes": None,
+            }
+        )
+    return normalized
+
+
+def _match_reference_variant_from_code(
+    code: str | None, reference_variants: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    if not code or not reference_variants:
+        return None
+    normalized_code = code.lower()
+    fallback_variant = next(
+        (variant for variant in reference_variants if variant.get("is_optimal")), None
+    ) or (reference_variants[0] if reference_variants else None)
+    for variant in reference_variants:
+        signals = variant.get("match_signals") or []
+        if not signals:
+            continue
+        for signal in signals:
+            if signal and signal in normalized_code:
+                if variant.get("is_optimal"):
+                    return variant
+                return variant
+    return fallback_variant
+
+
+def _maybe_create_local_evaluation(
+    db,
+    session,
+    latest_submission,
+    reference_variants: list[dict[str, Any]],
+) -> bool:
+    if latest_submission is None or not reference_variants:
+        return False
+    tests_total = _as_int(latest_submission.tests_total)
+    tests_passed = _as_int(latest_submission.tests_passed)
+    if tests_total <= 0 or tests_passed < tests_total:
+        return False
+
+    matched_variant = _match_reference_variant_from_code(
+        latest_submission.code_submitted, reference_variants
+    )
+    if matched_variant is None:
+        return False
+
+    scores = _build_local_score_profile(matched_variant)
+    total_score = sum(
+        [
+            scores["problem_understanding_score"],
+            scores["approach_quality_score"],
+            scores["code_correctness_reasoning_score"],
+            scores["complexity_analysis_score"],
+            scores["communication_clarity_score"],
+        ]
+    )
+    summary = _build_local_summary(matched_variant, total_score)
+    strengths = matched_variant.get("strengths") or [
+        "All automated tests passed on the first submission.",
+        f"Implemented the {matched_variant['title']} approach reliably.",
+    ]
+    improvements = matched_variant.get("improvements") or [
+        "Call out trade-offs when comparing against alternative strategies."
+    ]
+    create_interview_evaluation(
+        db=db,
+        session_id=_as_str(session.id),
+        stage="FEEDBACK",
+        summary=summary,
+        problem_understanding_score=scores["problem_understanding_score"],
+        approach_quality_score=scores["approach_quality_score"],
+        code_correctness_reasoning_score=scores["code_correctness_reasoning_score"],
+        complexity_analysis_score=scores["complexity_analysis_score"],
+        communication_clarity_score=scores["communication_clarity_score"],
+        total_score=total_score,
+        passed=total_score >= 30,
+        rubric_json={
+            "source": "local_heuristic",
+            "tests_passed": tests_passed,
+            "tests_total": tests_total,
+            "reference_variant": matched_variant,
+            "strengths": strengths,
+            "additional_improvements": improvements,
+        },
+    )
+    return True
+
+
+def _build_local_score_profile(variant: dict[str, Any]) -> dict[str, int]:
+    if bool(variant.get("is_optimal")):
+        return {
+            "problem_understanding_score": 9,
+            "approach_quality_score": 10,
+            "code_correctness_reasoning_score": 10,
+            "complexity_analysis_score": 9,
+            "communication_clarity_score": 9,
+        }
+    return {
+        "problem_understanding_score": 8,
+        "approach_quality_score": 7,
+        "code_correctness_reasoning_score": 10,
+        "complexity_analysis_score": 7,
+        "communication_clarity_score": 8,
+    }
+
+
+def _build_local_summary(variant: dict[str, Any], total_score: int) -> str:
+    pieces = [
+        f"The candidate implemented the {variant.get('title', 'reference')} approach"
+    ]
+    complexity = variant.get("complexity")
+    if complexity:
+        pieces.append(f"({complexity})")
+    pieces.append("and passed all automated tests on the first try.")
+    if not variant.get("is_optimal"):
+        pieces.append(
+            "It is acceptable but slower than the optimal hash map approach, so call out trade-offs more explicitly."
+        )
+    return " ".join(pieces) + f" Total score: {total_score}/50."
 
 
 def _normalize_chat_history(

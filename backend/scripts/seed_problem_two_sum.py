@@ -19,6 +19,67 @@ from app.db.models import Problem, ProblemList, ProblemListProblem
 import app.db.models  # noqa: F401  # ensure all models are registered before create_all
 
 
+REFERENCE_VARIANTS = [
+    {
+        "id": "hash_map_one_pass",
+        "title": "One-pass hash map",
+        "pseudocode": """1. Initialize map seen_indices = {}  // value -> index
+2. For each index i and value num in nums:
+     a. complement = target - num
+     b. If complement exists in seen_indices:
+           return [seen_indices[complement], i]
+     c. Otherwise store seen_indices[num] = i
+3. If loop ends without return, no valid pair (should not happen per constraints).
+Time: O(n). Space: O(n).
+""",
+        "complexity": "O(n) time, O(n) space",
+        "is_optimal": True,
+        "notes": "Preferred approach. Works well for large arrays.",
+        "match_signals": [
+            "dict",
+            "unordered_map",
+            "hashmap",
+            "seen_",
+            "target -",
+        ],
+        "strengths": [
+            "Selects the optimal O(n) solution with a single pass hash map.",
+            "Balances time and space trade-offs while remaining simple to explain.",
+        ],
+        "improvements": [
+            "Clarify how duplicates are handled when storing indices.",
+            "Call out why using a two-pass hash map is still acceptable for interviews.",
+        ],
+    },
+    {
+        "id": "nested_loops",
+        "title": "Nested loop brute force",
+        "pseudocode": """1. For each index i from 0..n-1:
+     a. For each index j from i+1..n-1:
+           if nums[i] + nums[j] == target: return [i, j]
+2. If loop ends without return, no valid pair (should not happen per constraints).
+Time: O(n^2). Space: O(1).
+""",
+        "complexity": "O(n^2) time, O(1) space",
+        "is_optimal": False,
+        "notes": "Common first attempt. Simpler but slower.",
+        "match_signals": [
+            "for",
+            "while",
+            "range(len",
+            "for (let i",
+            "for (int i",
+        ],
+        "strengths": [
+            "Easy to reason about and guarantees the correct pair when inputs are small.",
+        ],
+        "improvements": [
+            "Discuss why this approach does not scale to large inputs.",
+            "Explain how recognizing repeated computations leads to the hash map optimization.",
+        ],
+    },
+]
+
 TWO_SUM = {
     "title": "Two Sum",
     "category": "Arrays, Strings and Hashing",
@@ -99,6 +160,7 @@ Time: O(n). Space: O(n) for hash map.
 Edge cases to discuss: negative numbers, duplicates, large arrays.
 Cases to discuss IF the interviewer wants: what happens if we don't have a valid pair, or if we have less than two items. These kinds of questions that can push the interviewer to think a little more.
 """,
+    "reference_pseudocode_variants": REFERENCE_VARIANTS,
 }
 
 # Add this problem to these existing seeded lists when they exist.
@@ -120,6 +182,7 @@ def seed_two_sum() -> None:
                 category=TWO_SUM["category"],
                 starter_code=TWO_SUM["starter_code"],
                 reference_pseudocode=TWO_SUM["reference_pseudocode"],
+                reference_pseudocode_variants=TWO_SUM["reference_pseudocode_variants"],
             )
             db.add(problem)
             db.flush()
@@ -130,6 +193,7 @@ def seed_two_sum() -> None:
             problem.category = TWO_SUM["category"]
             problem.starter_code = TWO_SUM["starter_code"]
             problem.reference_pseudocode = TWO_SUM["reference_pseudocode"]
+            problem.reference_pseudocode_variants = TWO_SUM["reference_pseudocode_variants"]
             db.flush()
             print("Updated problem: Two Sum")
 

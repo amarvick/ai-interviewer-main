@@ -51,6 +51,8 @@ def generate_next_interviewer_message(
     recent_messages: list[ChatTurn],
     current_code: str | None = None,
     reference_pseudocode: str | None = None,
+    reference_variants: list[dict[str, Any]] | None = None,
+    active_variant: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     client = _build_client()
     if not client:
@@ -69,11 +71,25 @@ def generate_next_interviewer_message(
         "6. If the interview is complete, do NOT ask to move to another question. "
         "Provide a short closing line and set should_end_interview=true."
     )
-    if reference_pseudocode:
-        system_instruction += (
+    variant_context = ""
+    if active_variant and active_variant.get("pseudocode"):
+        variant_context = (
+            f"\nREFERENCE APPROACH IN PLAY: {active_variant.get('title', 'Selected variant')}."
+            f"\nComplexity: {active_variant.get('complexity', 'n/a')}."
+            f"\nPseudocode (keep private):\n{active_variant['pseudocode']}"
+        )
+    elif reference_pseudocode:
+        variant_context = (
             "\nREFERENCE PSEUDOCODE (do not reveal verbatim; use it to guide evaluation):\n"
             f"{reference_pseudocode.strip()}"
         )
+    elif reference_variants:
+        bullet_lines = "\n".join(
+            f"- {variant.get('title', 'Variant')}: {variant.get('complexity', 'n/a')}"
+            for variant in reference_variants[:3]
+        )
+        variant_context = f"\nREFERENCE APPROACHES:\n{bullet_lines}"
+    system_instruction += variant_context
 
     contents = _prepare_contents(recent_messages, current_code)
 
@@ -115,17 +131,30 @@ def evaluate_stage_rubric(
     stage_messages: list[ChatTurn],
     current_code: str | None = None,
     reference_pseudocode: str | None = None,
+    reference_variants: list[dict[str, Any]] | None = None,
+    active_variant: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     client = _build_client()
     if not client:
         return _fallback_rubric("Rubric evaluator unavailable.")
 
     transcript = "\n".join([f"{m['role']}: {m['content']}" for m in stage_messages])
-    reference_context = (
-        f"Reference pseudocode (keep private):\n{reference_pseudocode.strip()}\n\n"
-        if reference_pseudocode
-        else ""
-    )
+    reference_context = ""
+    if active_variant and active_variant.get("pseudocode"):
+        reference_context = (
+            f"Reference approach ({active_variant.get('title', 'variant')}) "
+            f"{active_variant.get('complexity', '')}:\n"
+            f"{active_variant['pseudocode']}\n\n"
+        )
+    elif reference_pseudocode:
+        reference_context = (
+            f"Reference pseudocode (keep private):\n{reference_pseudocode.strip()}\n\n"
+        )
+    elif reference_variants:
+        reference_context = "Reference approaches:\n" + "\n".join(
+            f"- {variant.get('title', 'Variant')}: {variant.get('pseudocode', '')[:200]}"
+            for variant in reference_variants[:2]
+        ) + "\n\n"
     code_context = f"\n\nCode Snapshot:\n{current_code}" if current_code else ""
 
     try:
