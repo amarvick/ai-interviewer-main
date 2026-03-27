@@ -247,6 +247,11 @@
   padding-left: 1.15rem;
 }
 
+.feedback-list li {
+  word-break: break-word;
+  white-space: normal;
+}
+
 .interview-chat-error {
   margin: 0;
   padding: 0.35rem 0.65rem 0.55rem;

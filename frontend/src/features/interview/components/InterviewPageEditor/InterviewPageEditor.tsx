@@ -46,6 +46,9 @@ export default function InterviewPageEditor({
     handleSubmitCode,
     handleDraftKeyDown,
   } = useInterviewSession(problem);
+  const keyOpportunities = completionResult?.gaps ?? [];
+  const additionalOnly = nitpicks.filter((item) => !keyOpportunities.includes(item));
+  const showAdditional = additionalOnly.length > 0;
 
   useEffect(() => {
     const container = chatMessagesRef.current;
@@ -234,14 +237,16 @@ export default function InterviewPageEditor({
                         )}
                       </div>
                     )}
-                    <div className="feedback-block">
-                      <h4>Additional Improvements</h4>
-                      <ul className="feedback-list">
-                        {nitpicks.map((item) => (
-                          <li key={item}>{item}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {showAdditional && (
+                      <div className="feedback-block">
+                        <h4>Additional Improvements</h4>
+                        <ul className="feedback-list">
+                          {additionalOnly.map((item) => (
+                            <li key={item}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

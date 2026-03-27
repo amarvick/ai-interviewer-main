@@ -64,6 +64,23 @@ def _as_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
 
+
+def _wrap_up_prompt_payload() -> dict[str, Any]:
+    return {
+        "assistant_message": (
+            "Great job driving the solution to completion. Before we wrap up, is there anything else you'd add—"
+            "maybe an alternative approach, additional tests, or trade-offs worth mentioning?"
+        ),
+        "checklist": {
+            "clarified_constraints": True,
+            "proposed_approach": True,
+            "complexity_analyzed": True,
+            "ready_to_code": True,
+        },
+        "can_code": False,
+        "should_end_interview": True,
+    }
+
 def start_interview_session(db, user_id: str, problem_id: str):
     start_time = perf_counter()
     problem = get_problem_by_id(db, problem_id)
@@ -230,25 +247,30 @@ def process_interview_message(
         has_submission,
     )
 
-    full_history = _normalize_chat_history(chat_history)
-    ai_context = (
-        full_history if full_history else _build_recent_context(db, _as_str(session.id))
-    )
     active_variant = _match_reference_variant_from_code(current_code, reference_variants)
     budget_mode = _determine_budget_mode(session)
     usage_tokens = 0
-    if budget_mode == "exhausted":
-        ai_message_payload = _low_budget_assistant_message(_as_stage(session.stage))
+    if _as_stage(session.stage) == "COMPLETE":
+        ai_message_payload = _wrap_up_prompt_payload()
     else:
-        ai_message_payload, usage_tokens = generate_next_interviewer_message(
-            recent_messages=ai_context,
-            current_code=current_code,
-            reference_pseudocode=problem_reference,
-            reference_variants=reference_variants,
-            active_variant=active_variant,
-            budget_mode="lightweight" if budget_mode == "lightweight" else "default",
+        full_history = _normalize_chat_history(chat_history)
+        ai_context = (
+            full_history
+            if full_history
+            else _build_recent_context(db, _as_str(session.id))
         )
-        _record_ai_usage(session, usage_tokens)
+        if budget_mode == "exhausted":
+            ai_message_payload = _low_budget_assistant_message(_as_stage(session.stage))
+        else:
+            ai_message_payload, usage_tokens = generate_next_interviewer_message(
+                recent_messages=ai_context,
+                current_code=current_code,
+                reference_pseudocode=problem_reference,
+                reference_variants=reference_variants,
+                active_variant=active_variant,
+                budget_mode="lightweight" if budget_mode == "lightweight" else "default",
+            )
+            _record_ai_usage(session, usage_tokens)
     create_interview_message(
         db=db,
         session_id=_as_str(session.id),

@@ -10,6 +10,15 @@ export interface ChatMessage {
   createdAt: number;
 }
 
+const MAX_FEEDBACK_LENGTH = 220;
+
+function truncateFeedbackLine(text: string): string {
+  if (text.length <= MAX_FEEDBACK_LENGTH) {
+    return text;
+  }
+  return `${text.slice(0, MAX_FEEDBACK_LENGTH - 1)}…`;
+}
+
 export function sortMessagesByTime(messages: ChatMessage[]): ChatMessage[] {
   return [...messages].sort((a, b) => {
     if (a.createdAt !== b.createdAt) {
@@ -119,6 +128,7 @@ export function extractAiAdditionalImprovements(
     const normalized = candidate
       .map((item) => String(item).trim())
       .filter((item) => item.length > 0)
+      .map((item) => truncateFeedbackLine(item))
       .slice(0, 6);
     if (normalized.length > 0) {
       return normalized;
