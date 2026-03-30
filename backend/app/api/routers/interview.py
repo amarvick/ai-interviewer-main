@@ -14,27 +14,25 @@ from app.schemas.interview import (
     InterviewSessionDetailResponse,
     InterviewSessionResponse,
 )
-from app.services.interview_service import (
-    complete_interview_session,
-    process_interview_message,
-    start_interview_session,
-)
+from app.services.interview import InterviewService
 from app.services.interview_ai_service import InterviewAIError
-from app.crud.interview import get_interview_session_by_id
 
 router = APIRouter(prefix="/interview", tags=["interview"])
+ 
+
+def get_interview_service(db: Session = Depends(get_db)) -> InterviewService:
+    return InterviewService(db)
 logger = logging.getLogger(__name__)
 
 
 @router.post("/session/start", response_model=InterviewSessionResponse)
 def create_interview_session(
     payload: InterviewSessionCreate,
-    db: Session = Depends(get_db),
+    service: InterviewService = Depends(get_interview_service),
     current_user: User = Depends(get_current_user),
 ):
     start_time = perf_counter()
-    session = start_interview_session(
-        db=db,
+    session = service.start_session(
         user_id=current_user.id,
         problem_id=payload.problem_id,
     )
@@ -59,11 +57,11 @@ def create_interview_session(
 @router.get("/session/{session_id}", response_model=InterviewSessionDetailResponse)
 def get_interview_session(
     session_id: str,
-    db: Session = Depends(get_db),
+    service: InterviewService = Depends(get_interview_service),
     current_user: User = Depends(get_current_user),
 ):
     start_time = perf_counter()
-    session = get_interview_session_by_id(db, session_id)
+    session = service.get_session(session_id)
     if session is None:
         logger.warning(
             "interview.get.failed user_id=%s session_id=%s reason=not_found",
@@ -94,11 +92,11 @@ def get_interview_session(
 def post_interview_message(
     session_id: str,
     payload: InterviewMessageCreate,
-    db: Session = Depends(get_db),
+    service: InterviewService = Depends(get_interview_service),
     current_user: User = Depends(get_current_user),
 ):
     start_time = perf_counter()
-    existing_session = get_interview_session_by_id(db, session_id)
+    existing_session = service.get_session(session_id)
     if existing_session is None:
         logger.warning(
             "interview.message.failed user_id=%s session_id=%s reason=not_found",
@@ -116,8 +114,7 @@ def post_interview_message(
         raise HTTPException(status_code=403, detail="Forbidden")
 
     try:
-        session = process_interview_message(
-            db=db,
+        session = service.process_message(
             session_id=session_id,
             user_id=current_user.id,
             content=payload.content,
@@ -156,11 +153,11 @@ def post_interview_message(
 def complete_session(
     session_id: str,
     payload: InterviewSessionComplete,
-    db: Session = Depends(get_db),
+    service: InterviewService = Depends(get_interview_service),
     current_user: User = Depends(get_current_user),
 ):
     start_time = perf_counter()
-    existing_session = get_interview_session_by_id(db, session_id)
+    existing_session = service.get_session(session_id)
     if existing_session is None:
         logger.warning(
             "interview.complete.failed user_id=%s session_id=%s reason=not_found",
@@ -177,8 +174,7 @@ def complete_session(
         )
         raise HTTPException(status_code=403, detail="Forbidden")
 
-    session = complete_interview_session(
-        db=db,
+    session = service.complete_session(
         session_id=session_id,
         user_id=current_user.id,
         requested_final_score=payload.final_score,

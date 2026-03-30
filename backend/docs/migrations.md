@@ -25,4 +25,6 @@ alembic upgrade head
 ```
 
 Please avoid creating ad-hoc `.sql` files; keeping all diffs in Alembic makes it
-easy to replay changes across environments.
+easy to replay changes across environments. The GitHub Action defined in
+`.github/workflows/backend-ci.yml` runs `alembic upgrade head --sql` on every
+push/PR touching the backend to ensure new migrations compile.
