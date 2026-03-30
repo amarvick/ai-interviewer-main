@@ -9,6 +9,7 @@ from app.crud.interview import (
     get_recent_evaluations_by_session_id,
     get_recent_messages_by_session_id,
 )
+from app.services.analytics import record_interview_evaluation_event
 
 
 AI_TOKEN_LIGHTWEIGHT_THRESHOLD = 12000
@@ -236,6 +237,30 @@ def _maybe_create_local_evaluation(
             "summary": summary,
             "strengths": strengths,
             "additional_improvements": improvements,
+        },
+    )
+    session_problem_id = getattr(session, "problem_id", None)
+    session_user_id = getattr(session, "user_id", None)
+    record_interview_evaluation_event(
+        session_id=_as_str(session.id),
+        problem_id=_as_str(session_problem_id) if session_problem_id else None,
+        user_id=_as_str(session_user_id) if session_user_id else None,
+        source="local_heuristic",
+        total_score=total_score,
+        rubric_scores={
+            "problem_understanding_score": scores["problem_understanding_score"],
+            "approach_quality_score": scores["approach_quality_score"],
+            "code_correctness_reasoning_score": scores[
+                "code_correctness_reasoning_score"
+            ],
+            "complexity_analysis_score": scores["complexity_analysis_score"],
+            "communication_clarity_score": scores["communication_clarity_score"],
+        },
+        variant=matched_variant,
+        metadata={
+            "tests_total": tests_total,
+            "tests_passed": tests_passed,
+            "summary": summary,
         },
     )
     return True

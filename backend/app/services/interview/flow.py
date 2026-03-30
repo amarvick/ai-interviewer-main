@@ -20,6 +20,7 @@ from app.services.interview_ai_service import (
     generate_next_interviewer_message,
     generate_failed_submission_guidance,
 )
+from app.services.analytics import record_interview_evaluation_event
 from app.services.interview.helpers import (
     _as_float,
     _as_int,
@@ -341,12 +342,14 @@ def complete_interview_session(
                     final_code_snapshot, reference_variants
                 )
                 budget_mode = _determine_budget_mode(session)
+                source_label = "llm_eval_final"
+                rubric_tokens = 0
                 if budget_mode == "exhausted":
                     final_rubric = _build_budget_rubric_fallback(
                         tests_passed=final_tests_passed,
                         tests_total=final_tests_total,
                     )
-                    rubric_tokens = 0
+                    source_label = "budget_fallback"
                 else:
                     final_rubric, rubric_tokens = evaluate_stage_rubric(
                         stage_messages=stage_messages,
@@ -394,6 +397,41 @@ def complete_interview_session(
                         "tests_passed": final_tests_passed,
                         "tests_total": final_tests_total,
                         **final_rubric,
+                    },
+                )
+                session_problem_id = getattr(session, "problem_id", None)
+                session_user_id = getattr(session, "user_id", None)
+                record_interview_evaluation_event(
+                    session_id=_as_str(session.id),
+                    problem_id=_as_str(session_problem_id)
+                    if session_problem_id
+                    else None,
+                    user_id=_as_str(session_user_id) if session_user_id else None,
+                    source=source_label,
+                    total_score=final_total,
+                    rubric_scores={
+                        "problem_understanding_score": final_rubric[
+                            "problem_understanding_score"
+                        ],
+                        "approach_quality_score": final_rubric[
+                            "approach_quality_score"
+                        ],
+                        "code_correctness_reasoning_score": final_rubric[
+                            "code_correctness_reasoning_score"
+                        ],
+                        "complexity_analysis_score": final_rubric[
+                            "complexity_analysis_score"
+                        ],
+                        "communication_clarity_score": final_rubric[
+                            "communication_clarity_score"
+                        ],
+                    },
+                    variant=active_variant,
+                    metadata={
+                        "tests_passed": final_tests_passed,
+                        "tests_total": final_tests_total,
+                        "budget_mode": budget_mode,
+                        "rubric_tokens": rubric_tokens,
                     },
                 )
                 db.flush()
@@ -498,4 +536,3 @@ def _review_latest_submission(db, session, user_id: str, has_submission: bool) -
         "assistant_message": guidance["assistant_message"],
         "failed_case_label": case_label,
     }
-
