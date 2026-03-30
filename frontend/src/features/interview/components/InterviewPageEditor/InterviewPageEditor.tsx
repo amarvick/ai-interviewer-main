@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import type { Problem } from "@/types/problem";
 import {
   ProblemPageCodeEditor,
@@ -6,18 +5,15 @@ import {
 } from "@/features/problem";
 import SplitPane from "@/components/SplitPane/SplitPane";
 import { useInterviewSession } from "@/features/interview/hooks/useInterviewSession";
+import ChatPanel from "@/features/interview/components/ChatPanel/ChatPanel";
+import FeedbackPanel from "@/features/interview/components/FeedbackPanel/FeedbackPanel";
 import "./InterviewPageEditor.css";
 
 interface InterviewPageEditorProps {
   problem: Problem;
 }
 
-export default function InterviewPageEditor({
-  problem,
-}: InterviewPageEditorProps) {
-  const chatMessagesRef = useRef<HTMLDivElement | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement | null>(null);
-
+export default function InterviewPageEditor({ problem }: InterviewPageEditorProps) {
   const {
     languageOptions,
     selectedLanguage,
@@ -27,13 +23,11 @@ export default function InterviewPageEditor({
     sessionStatus,
     canSubmit,
     activeTab,
-    completionResult,
     isSending,
     isSubmittingCode,
     isLoadingFeedback,
     error,
     rubricRows,
-    nitpicks,
     feedbackSummary,
     finalScore,
     didPass,
@@ -45,23 +39,11 @@ export default function InterviewPageEditor({
     handleSend,
     handleSubmitCode,
     handleDraftKeyDown,
+    completionResult,
+    keyOpportunities,
+    additionalOnly,
+    showAdditional,
   } = useInterviewSession(problem);
-  const keyOpportunities = completionResult?.gaps ?? [];
-  const additionalOnly = nitpicks.filter((item) => !keyOpportunities.includes(item));
-  const showAdditional = additionalOnly.length > 0;
-
-  useEffect(() => {
-    const container = chatMessagesRef.current;
-    if (!container) {
-      return;
-    }
-    container.scrollTop = container.scrollHeight;
-
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === "ai") {
-      inputRef.current?.focus();
-    }
-  }, [messages]);
 
   return (
     <div className="interview-editor-shell">
@@ -123,132 +105,29 @@ export default function InterviewPageEditor({
               </button>
             </div>
             {activeTab === "chat" ? (
-              <>
-                <div className="interview-chat-messages" ref={chatMessagesRef}>
-                  {messages.length === 0 && (
-                    <p className="interview-chat-empty">
-                      Interview messages will appear here when the session starts.
-                    </p>
-                  )}
-                  {messages.map((message) => (
-                    <article
-                      key={message.id}
-                      className={`chat-bubble ${message.role === "ai" ? "ai" : "you"}`}
-                    >
-                      <p className="chat-bubble-role">
-                        {message.role === "ai" ? "Interviewer" : "You"}
-                      </p>
-                      <p className="chat-bubble-text">{message.content}</p>
-                    </article>
-                  ))}
-                </div>
-                <footer className="interview-chat-input-wrap">
-                  <textarea
-                    ref={inputRef}
-                    value={draftMessage}
-                    onChange={(event) => setDraftMessage(event.target.value)}
-                    onKeyDown={handleDraftKeyDown}
-                    placeholder="Explain your thinking, ask a clarification, or answer a follow-up..."
-                    rows={3}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={
-                      isSending ||
-                      isSubmittingCode ||
-                      !hasSession ||
-                      !draftMessage.trim()
-                    }
-                  >
-                    {isSending ? "Sending..." : "Send"}
-                  </button>
-                </footer>
-              </>
+              <ChatPanel
+                messages={messages}
+                draftMessage={draftMessage}
+                onDraftChange={setDraftMessage}
+                onKeyDown={handleDraftKeyDown}
+                onSend={handleSend}
+                isSending={isSending}
+                isSubmittingCode={isSubmittingCode}
+                hasSession={hasSession}
+              />
             ) : (
               <div className="interview-feedback-panel">
-                {isLoadingFeedback ? (
-                  <div className="feedback-loading" role="status" aria-live="polite">
-                    <span className="feedback-spinner" aria-hidden="true" />
-                    <span>Generating feedback...</span>
-                  </div>
-                ) : (
-                  <>
-                    {completionResult && (
-                      <div className="score-card">
-                        <h4>Final Result</h4>
-                        <p className="score-line">
-                          Score: <strong>{(finalScore ?? 0).toFixed(2)} / 50.00</strong>
-                        </p>
-                        <p
-                          className={`pass-fail-pill ${
-                            didPass ? "pass-fail-pass" : "pass-fail-fail"
-                          }`}
-                        >
-                          {didPass ? "Pass" : "Fail"}
-                        </p>
-                      </div>
-                    )}
-                    <h3>Rubric</h3>
-                    {rubricRows.length === 0 && (
-                      <p className="interview-chat-empty">
-                        Feedback will appear here once the interview has enough signal.
-                      </p>
-                    )}
-                    {rubricRows.length > 0 && (
-                      <div className="rubric-table">
-                        {rubricRows.map((row) => (
-                          <div key={row.label} className="rubric-row">
-                            <span>{row.label}</span>
-                            <span>{row.value.toFixed(2)} / 10.00</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {completionResult && (
-                      <div className="feedback-block">
-                        <h4>Summary</h4>
-                        {feedbackSummary ? (
-                          <p className="feedback-summary-text">{feedbackSummary}</p>
-                        ) : (
-                          <p className="feedback-summary-text">
-                            Highlights and key opportunities are summarized below.
-                          </p>
-                        )}
-                        {completionResult.strengths.length > 0 && (
-                          <>
-                            <h5>Highlights</h5>
-                            <ul className="feedback-list">
-                              {completionResult.strengths.map((item) => (
-                                <li key={`strength-${item}`}>{item}</li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                        {completionResult.gaps.length > 0 && (
-                          <>
-                            <h5>Key Opportunities</h5>
-                            <ul className="feedback-list">
-                              {completionResult.gaps.map((item) => (
-                                <li key={`gap-${item}`}>{item}</li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    {showAdditional && (
-                      <div className="feedback-block">
-                        <h4>Additional Improvements</h4>
-                        <ul className="feedback-list">
-                          {additionalOnly.map((item) => (
-                            <li key={item}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </>
-                )}
+                <FeedbackPanel
+                  completionResult={completionResult}
+                  isLoading={isLoadingFeedback}
+                  rubricRows={rubricRows}
+                  feedbackSummary={feedbackSummary}
+                  finalScore={finalScore}
+                  didPass={didPass}
+                  keyOpportunities={keyOpportunities}
+                  additionalOnly={additionalOnly}
+                  showAdditional={showAdditional}
+                />
               </div>
             )}
             {error && <p className="interview-chat-error">{error}</p>}
