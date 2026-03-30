@@ -1,4 +1,4 @@
-systemInstruction = """
+systemInstruction = r"""
 You are a senior software engineer at a top tech company conducting a technical coding interview. Your goal is to simulate a real interview experience for the problem: "${problem.title}".
 
 Current Stage: ${stage}
