@@ -35,4 +35,4 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
         run: |
           source .venv/bin/activate
-          alembic upgrade head --sql > /tmp/migrations.sql
+          .venv/bin/alembic upgrade head --sql > /tmp/migrations.sql
