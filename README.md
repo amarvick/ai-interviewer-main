@@ -15,6 +15,7 @@ TODOS:
 - Stage-aware summarization: before each AI call, pre-summarize the relevant chat slice on the server (e.g., “Clarification highlights: …”). Send that digest plus the reference snippet instead of the entire transcript; you reduce tokens while giving the model a distilled view aligned with your rubric.
 - Feature flags (particularly for voiceover functionality once it's time)
 - Add more problems to Blind 75 list.
+- If problems have 'Followups', include that as a field in the problem schema.
 
 For distant future:
 

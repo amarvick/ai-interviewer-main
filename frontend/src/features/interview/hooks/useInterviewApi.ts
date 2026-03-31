@@ -126,8 +126,9 @@ export function useInterviewApi({
     }
 
     let isMounted = true;
+    setState((prev) => ({ ...prev, isLoadingFeedback: true }));
+
     const hydrate = async () => {
-      setState((prev) => ({ ...prev, isLoadingFeedback: true }));
       try {
         const result = await completeInterviewSession(state.sessionId!);
         const normalized = adaptCompletionResponse(result);
@@ -157,7 +158,6 @@ export function useInterviewApi({
   }, [
     applySessionDetail,
     state.completionResult,
-    state.isLoadingFeedback,
     state.sessionId,
     state.status,
   ]);
