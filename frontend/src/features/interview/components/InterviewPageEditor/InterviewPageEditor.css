@@ -129,6 +129,7 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.55rem;
+  height: 180px;
 }
 
 .interview-chat-input-wrap textarea {
@@ -159,6 +160,116 @@
 .interview-chat-input-wrap button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.history-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  color: #d0ddff;
+  overflow: auto;
+}
+
+.history-card {
+  border: 1px solid rgba(132, 153, 219, 0.3);
+  border-radius: 10px;
+  background: rgba(12, 19, 39, 0.82);
+}
+
+.history-card summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.history-card summary::marker,
+.history-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-card summary::after {
+  content: "▾";
+  font-size: 0.9rem;
+  color: #cfdcff;
+}
+
+.history-card[open] summary::after {
+  content: "▴";
+}
+
+.history-card[open] summary {
+  border-bottom: 1px solid rgba(132, 153, 219, 0.2);
+}
+
+.history-card-title {
+  font-weight: 600;
+  display: block;
+  color: #e4ecff;
+}
+
+.history-card-subtitle {
+  font-size: 0.85rem;
+  color: #a9bbe7;
+}
+
+.history-card-score {
+  font-weight: 600;
+  color: #dcf9ef;
+}
+
+.history-card-body {
+  padding: 0.75rem 0.9rem 0.95rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.history-card-summary {
+  margin: 0;
+  color: #cfdcff;
+}
+
+.history-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.history-card-grid dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.4rem;
+  row-gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.history-card-grid dt {
+  color: #9bb0e6;
+}
+
+.history-card-grid dd {
+  margin: 0;
+  text-align: right;
+  color: #e4ecff;
+}
+
+.history-card-grid h5 {
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
+  color: #bcd0ff;
+}
+
+.history-card-grid ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  display: grid;
+  gap: 0.25rem;
 }
 
 .interview-feedback-panel {

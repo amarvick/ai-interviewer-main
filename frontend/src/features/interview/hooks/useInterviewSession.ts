@@ -17,7 +17,7 @@ import type {
   InterviewEvaluationResponse,
 } from "@/types/interview";
 
-type InterviewPanelTab = "chat" | "feedback";
+type InterviewPanelTab = "chat" | "feedback" | "history";
 
 export interface UseInterviewSessionResult {
   languageOptions: Language[];
@@ -87,10 +87,14 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
   }, [starterCode, selectedLanguage]);
 
   useEffect(() => {
-    if (transport.status === "COMPLETED") {
+    if (
+      transport.status === "COMPLETED" &&
+      !transport.completionResult &&
+      activeTab !== "feedback"
+    ) {
       setActiveTab("feedback");
     }
-  }, [transport.status]);
+  }, [activeTab, transport.completionResult, transport.status]);
 
   const handleLanguageChange = useCallback(
     (nextLanguage: Language) => {
