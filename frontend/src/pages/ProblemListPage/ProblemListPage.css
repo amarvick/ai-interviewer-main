@@ -10,6 +10,122 @@
   margin-top: 0;
 }
 
+.problem-filters {
+  margin: 1rem 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  border: 1px solid rgba(132, 153, 219, 0.25);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: rgba(4, 9, 22, 0.6);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.dropdown-group {
+  gap: 0.3rem;
+  position: relative;
+}
+
+.filter-group label,
+.filter-group span {
+  font-weight: 600;
+  color: #dbe7ff;
+}
+
+.filter-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.filter-group input[type="search"],
+.filter-group select {
+  border: 1px solid rgba(132, 153, 219, 0.4);
+  border-radius: 8px;
+  background: rgba(9, 14, 34, 0.65);
+  color: #f1f4ff;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+}
+
+.filter-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+}
+
+.filter-checkboxes.column {
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dropdown-trigger {
+  border: 1px solid rgba(132, 153, 219, 0.45);
+  border-radius: 8px;
+  background: rgba(12, 18, 34, 0.8);
+  color: #e4ecff;
+  padding: 0.35rem 0.5rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.dropdown-icon {
+  margin-left: 0.4rem;
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  z-index: 20;
+  min-width: 220px;
+  border: 1px solid rgba(132, 153, 219, 0.5);
+  border-radius: 10px;
+  background: rgba(3, 6, 16, 0.95);
+  box-shadow: 0 8px 18px rgba(3, 6, 16, 0.6);
+  padding: 0.6rem;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.filter-checkboxes label {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  font-weight: 500;
+  color: #c8d4ff;
+}
+
+.filter-checkboxes input[type="checkbox"] {
+  accent-color: #6fc3ff;
+}
+
+.filter-reset {
+  align-self: center;
+  margin-top: auto;
+  border: 1px solid rgba(255, 179, 179, 0.6);
+  background: transparent;
+  color: #ffb3b3;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.problem-filter-summary {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.95rem;
+  color: #cfd8ff;
+}
+
 .status-line {
   margin: 0.5rem 0;
   color: #b9c6f3;
@@ -23,5 +139,9 @@
   .simple-page {
     border-radius: 14px;
     padding: 1rem;
+  }
+
+  .problem-filters {
+    grid-template-columns: 1fr;
   }
 }
