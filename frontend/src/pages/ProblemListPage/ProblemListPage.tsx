@@ -118,7 +118,7 @@ export default function ProblemListPage() {
     { value: "default", label: "Default order" },
     { value: "title_asc", label: "Title (A-Z)" },
     { value: "title_desc", label: "Title (Z-A)" },
-    { value: "difficulty", label: "Difficulty (Easy → Hard)" },
+    { value: "difficulty_asc", label: "Difficulty (Easy → Hard)" },
     { value: "difficulty_desc", label: "Difficulty (Hard → Easy)" },
   ];
 
@@ -310,8 +310,9 @@ export default function ProblemListPage() {
                 onClick={() => setShowSortMenu((prev) => !prev)}
               >
                 <span className="dropdown-value">
-                  {sortOptionsConfig.find((option) => option.value === sortOption)
-                    ?.label ?? "Default order"}
+                  {sortOptionsConfig.find(
+                    (option) => option.value === sortOption
+                  )?.label ?? "Default order"}
                 </span>
                 <span className="dropdown-icon" aria-hidden="true">
                   {showSortMenu ? "▴" : "▾"}

@@ -9,9 +9,8 @@ from app.crud.interview import (
     create_interview_session,
     get_interview_session_by_id,
     get_recent_evaluations_by_session_id,
-    get_recent_messages_by_session_id,
 )
-from app.crud.submission import get_latest_submission
+from app.crud.submission import get_latest_submission, mark_problem_passed
 from app.crud.testcase import get_testcases_by_problem_id
 from app.crud.problem import get_problem_by_id
 from app.services.interview_stage_engine import decide_stage_transition
@@ -42,6 +41,7 @@ from app.services.interview.helpers import (
 )
 
 logger = logging.getLogger(__name__)
+INTERVIEW_PASSING_SCORE = 40.0
 
 def start_interview_session(db, user_id: str, problem_id: str):
     start_time = perf_counter()
@@ -465,6 +465,16 @@ def complete_interview_session(
     session.status = "COMPLETED"
     setattr(session, "stage", "COMPLETE")
     session.completed_at = datetime.utcnow()
+    passed_interview = (
+        session.final_score is not None
+        and _as_float(session.final_score) >= INTERVIEW_PASSING_SCORE
+    )
+    if passed_interview:
+        mark_problem_passed(
+            db=db,
+            user_id=user_id,
+            problem_id=_as_str(session.problem_id),
+        )
     db.commit()
     refreshed = get_interview_session_by_id(db, _as_str(session.id))
     if refreshed is None:

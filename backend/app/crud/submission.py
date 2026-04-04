@@ -101,3 +101,16 @@ def _upsert_user_problem_progress(
         row.is_passed = True
         if row.first_passed_at is None:
             row.first_passed_at = submission_time
+
+
+def mark_problem_passed(db: Session, user_id: str, problem_id: str):
+    """Mark a problem as passed for a user outside the standard submission flow."""
+    submission_time = datetime.utcnow()
+    _upsert_user_problem_progress(
+        db=db,
+        user_id=user_id,
+        problem_id=problem_id,
+        submission_id=None,
+        submission_time=submission_time,
+        did_pass=True,
+    )
