@@ -49,6 +49,7 @@ export default function ProblemListPage() {
   const [sortOption, setSortOption] = useState<SortOption>("default");
   const [showDifficultyFilters, setShowDifficultyFilters] = useState(false);
   const [showCategoryFilters, setShowCategoryFilters] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const augmentedProblems: AugmentedProblem[] = useMemo(() => {
     if (!data?.problems) {
@@ -112,6 +113,14 @@ export default function ProblemListPage() {
   }, [augmentedProblems]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const sortOptionsConfig: Array<{ value: SortOption; label: string }> = [
+    { value: "default", label: "Default order" },
+    { value: "title_asc", label: "Title (A-Z)" },
+    { value: "title_desc", label: "Title (Z-A)" },
+    { value: "difficulty", label: "Difficulty (Easy → Hard)" },
+    { value: "difficulty_desc", label: "Difficulty (Hard → Easy)" },
+  ];
 
   const filteredProblems = useMemo(() => {
     const filtered = augmentedProblems.filter((item) => {
@@ -191,6 +200,7 @@ export default function ProblemListPage() {
     setSortOption("default");
     setShowDifficultyFilters(false);
     setShowCategoryFilters(false);
+    setShowSortMenu(false);
   };
 
   return (
@@ -290,23 +300,44 @@ export default function ProblemListPage() {
               </div>
             )}
 
-            <div className="filter-group">
-              <label htmlFor="sort-select">Sort by</label>
-              <select
-                id="sort-select"
-                value={sortOption}
-                onChange={(event) =>
-                  setSortOption(event.target.value as SortOption)
-                }
+            <div className="filter-group dropdown-group sort-group">
+              <span className="filter-group-label">Sort Order</span>
+              <button
+                type="button"
+                className="dropdown-trigger"
+                aria-haspopup="true"
+                aria-expanded={showSortMenu}
+                onClick={() => setShowSortMenu((prev) => !prev)}
               >
-                <option value="default">Default order</option>
-                <option value="title_asc">Title (A-Z)</option>
-                <option value="title_desc">Title (Z-A)</option>
-                <option value="difficulty">Difficulty (Easy → Hard)</option>
-                <option value="difficulty_desc">
-                  Difficulty (Hard → Easy)
-                </option>
-              </select>
+                <span className="dropdown-value">
+                  {sortOptionsConfig.find((option) => option.value === sortOption)
+                    ?.label ?? "Default order"}
+                </span>
+                <span className="dropdown-icon" aria-hidden="true">
+                  {showSortMenu ? "▴" : "▾"}
+                </span>
+              </button>
+              {showSortMenu && (
+                <div className="dropdown-panel" role="menu">
+                  <div className="filter-checkboxes column">
+                    {sortOptionsConfig.map((option) => (
+                      <label key={option.value}>
+                        <input
+                          type="radio"
+                          name="sort-options"
+                          value={option.value}
+                          checked={sortOption === option.value}
+                          onChange={() => {
+                            setSortOption(option.value);
+                            setShowSortMenu(false);
+                          }}
+                        />
+                        {option.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {hasActiveFilters && (

@@ -33,6 +33,13 @@
   position: relative;
 }
 
+.sort-group {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .filter-group label,
 .filter-group span {
   font-weight: 600;
@@ -41,6 +48,21 @@
 
 .filter-group.full-width {
   grid-column: 1 / -1;
+}
+
+.filter-inline-control {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.filter-inline-control label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.filter-inline-control select {
+  flex: 1;
 }
 
 .filter-group input[type="search"],
@@ -81,6 +103,11 @@
   margin-left: 0.4rem;
 }
 
+.dropdown-value {
+  flex: 1;
+  text-align: left;
+}
+
 .dropdown-panel {
   position: absolute;
   top: calc(100% + 0.35rem);
@@ -94,6 +121,11 @@
   padding: 0.6rem;
   max-height: 240px;
   overflow-y: auto;
+}
+
+.sort-group .dropdown-panel {
+  left: auto;
+  right: 0;
 }
 
 .filter-checkboxes label {
