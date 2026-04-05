@@ -1,7 +1,22 @@
 import { clearAuthToken, getAuthToken } from "../auth";
 
+const ENV_TARGET =
+  (import.meta.env.VITE_ENV_TARGET ?? import.meta.env.MODE ?? "development")
+    .toString()
+    .toLowerCase();
+
+const LOCAL_API_BASE =
+  import.meta.env.VITE_API_BASE_URL_LOCAL ?? "http://127.0.0.1:8000";
+
+const PROD_API_BASE =
+  import.meta.env.VITE_API_BASE_URL_PROD ??
+  import.meta.env.VITE_API_BASE_URL ??
+  LOCAL_API_BASE;
+
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
+  ENV_TARGET === "prod" || ENV_TARGET === "production"
+    ? PROD_API_BASE
+    : LOCAL_API_BASE;
 
 export function buildAuthHeaders(headers: HeadersInit = {}): HeadersInit {
   const token = getAuthToken();
