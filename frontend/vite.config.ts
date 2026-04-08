@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from "node:url";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.GITHUB_PAGES ? "/ai-interviewer-main/" : "/",
   plugins: [react()],
   resolve: {
     alias: {
