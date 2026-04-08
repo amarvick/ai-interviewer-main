@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 import logging
+import os
 from app.db.database import engine, Base
 from app.api.routers import user, problem, submission, interview
 
@@ -19,12 +20,17 @@ logging.basicConfig(
 
 app = FastAPI()
 
+default_allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+github_pages_origin = os.getenv("GITHUB_PAGES_ORIGIN")
+if github_pages_origin:
+    default_allowed_origins.append(github_pages_origin.rstrip("/"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=default_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
