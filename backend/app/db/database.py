@@ -7,8 +7,29 @@ import os
 
 load_dotenv()
 
-# should match docker-compose.yml config
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/ai_interviewer") 
+def _build_database_url() -> str:
+    primary = os.getenv("DATABASE_URL")
+    if primary:
+        return primary
+
+    render_internal = os.getenv("DATABASE_INTERNAL_URL") or os.getenv("RENDER_DATABASE_URL")
+    if render_internal:
+        return render_internal
+
+    user = os.getenv("POSTGRES_USER")
+    password = os.getenv("POSTGRES_PASSWORD")
+    host = os.getenv("POSTGRES_HOST")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    db_name = os.getenv("POSTGRES_DB")
+
+    if all([user, password, host, db_name]):
+        return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
+
+    # fallback for local development
+    return "postgresql://postgres:postgres@localhost:5432/ai_interviewer"
+
+# Determine which DB connection string to use (Render env vars override local settings)
+DATABASE_URL = _build_database_url()
 
 # Sets up connection infrastructure to DB
 engine = create_engine(DATABASE_URL)
