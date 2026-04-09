@@ -25,6 +25,10 @@ def _build_database_url() -> str:
     if all([user, password, host, db_name]):
         return f"postgresql://{user}:{password}@{host}:{port}/{db_name}"
 
+    local = os.getenv("LOCAL_DATABASE_URL")
+    if local:
+        return local
+
     # fallback for local development
     return "postgresql://postgres:postgres@localhost:5432/ai_interviewer"
 
