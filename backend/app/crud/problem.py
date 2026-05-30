@@ -41,9 +41,13 @@ def search_problems_from_problem_list(
 ):
     query = (
         db.query(Problem)
-        .join(ProblemListProblem, ProblemListProblem.problem_id == Problem.id)
-        .filter(ProblemListProblem.problem_list_id == problem_list_id)
     )
+    if problem_list_id:
+        query = (
+            query
+            .join(ProblemListProblem, ProblemListProblem.problem_id == Problem.id)
+            .filter(ProblemListProblem.problem_list_id == problem_list_id)
+        )
 
     normalized_search = search.strip()
     if normalized_search:
