@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import DOMPurify from "dompurify";
 import { marked } from "marked";
+import { renderBlockToken } from "../../utils/problemDescription";
 import type { Problem } from "@/types/problem";
 import styles from "./ProblemPageDescription.module.css";
 
@@ -11,12 +11,11 @@ interface ProblemPageDescriptionProps {
 export default function ProblemPageDescription({
   problem,
 }: ProblemPageDescriptionProps) {
-  const descriptionHtml = useMemo(() => {
-    const raw = marked.parse(problem.description || "", {
+  const descriptionTokens = useMemo(() => {
+    return marked.lexer(problem.description || "", {
       breaks: true,
       gfm: true,
-    }) as string;
-    return DOMPurify.sanitize(raw);
+    });
   }, [problem.description]);
 
   return (
@@ -32,10 +31,11 @@ export default function ProblemPageDescription({
 
       <section className={styles.descriptionSection}>
         <h2 className={styles.descriptionHeading}>Description</h2>
-        <div
-          className={styles.descriptionContent}
-          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-        />
+        <div className={styles.descriptionContent}>
+          {descriptionTokens.map((token, index) =>
+            renderBlockToken(token, index)
+          )}
+        </div>
       </section>
     </article>
   );
