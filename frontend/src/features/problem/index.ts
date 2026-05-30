@@ -6,6 +6,5 @@ export { default as ProblemPageCodeEditor } from "./components/ProblemPageCodeEd
 export { default as ProblemPageEditorToolbar } from "./components/ProblemPageEditorToolbar/ProblemPageEditorToolbar";
 export * from "./hooks/useProblemEditor";
 export * from "./hooks/useProblemQuery";
-export * from "./hooks/useProblemsQuery";
 export * from "./hooks/useProblemListsQuery";
 export * from "./utils/problemEditor";

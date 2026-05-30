@@ -21,11 +21,6 @@ export interface ProblemList {
   icon_url: string;
 }
 
-export interface ProblemListProblemsResponse {
-  name: string;
-  problems: Problem[];
-}
-
 export interface ProblemSearchPageParams {
   problemListId: string;
   search?: string;

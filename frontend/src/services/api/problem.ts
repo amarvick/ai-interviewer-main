@@ -1,7 +1,6 @@
 import type {
   Problem,
   ProblemList,
-  ProblemListProblemsResponse,
   ProblemSearchPageParams,
   ProblemSearchPageResponse,
 } from "../../types/problem";
@@ -13,19 +12,6 @@ export async function getProblemLists(
   return requestJson<ProblemList[]>(`${API_BASE_URL}/problem-lists`, {
     signal,
   });
-}
-
-export async function getProblemsByProblemListId(
-  problemListId: string,
-  signal?: AbortSignal
-): Promise<ProblemListProblemsResponse> {
-  return requestJson<ProblemListProblemsResponse>(
-    `${API_BASE_URL}/problems/${problemListId}`,
-    {
-      headers: buildAuthHeaders(),
-      signal,
-    }
-  );
 }
 
 export async function getProblemSearchPage(
