@@ -31,6 +31,42 @@ def get_problems_from_problem_list(db: Session, problem_list_id: str):
     )
 
 
+def search_problems_from_problem_list(
+    db: Session,
+    problem_list_id: str,
+    *,
+    search: str = "",
+    page: int = 1,
+    page_size: int = 10,
+):
+    query = (
+        db.query(Problem)
+        .join(ProblemListProblem, ProblemListProblem.problem_id == Problem.id)
+        .filter(ProblemListProblem.problem_list_id == problem_list_id)
+    )
+
+    normalized_search = search.strip()
+    if normalized_search:
+        pattern = f"%{normalized_search}%"
+        query = query.filter(
+            or_(
+                Problem.title.ilike(pattern),
+                Problem.category.ilike(pattern),
+                Problem.difficulty.ilike(pattern)
+            )
+        )
+    
+    total = query.count()
+    offset = (page - 1) * page_size
+
+    problems = (
+        query
+        .offset(offset)
+        .limit(page_size)
+        .all()
+    )
+    return problems, total
+
 def get_passed_problem_ids_for_user(
     db: Session,
     user_id: str,

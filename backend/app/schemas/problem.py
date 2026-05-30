@@ -32,3 +32,14 @@ class ProblemListResponse(BaseModel):
 class ProblemListProblemsResponse(BaseModel):
     name: str
     problems: list[ProblemResponse]
+
+
+class ProblemSearchPageResponse(BaseModel):
+    name: str
+    problems: list[ProblemResponse]
+    page: int
+    page_size: int
+    total: int
+    total_pages: int
+    has_next_page: bool
+    has_previous_page: bool

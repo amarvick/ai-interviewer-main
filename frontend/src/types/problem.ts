@@ -25,3 +25,21 @@ export interface ProblemListProblemsResponse {
   name: string;
   problems: Problem[];
 }
+
+export interface ProblemSearchPageParams {
+  problemListId: string;
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProblemSearchPageResponse {
+  name: string;
+  problems: Problem[];
+  page: number;
+  page_size: number;
+  total: number;
+  total_pages: number;
+  has_next_page: boolean;
+  has_previous_page: boolean;
+}
