@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { Problem } from "@/types/problem";
 import {
@@ -53,18 +53,32 @@ export interface UseInterviewSessionResult {
 }
 
 export function useInterviewSession(problem: Problem): UseInterviewSessionResult {
-  const starterCode = problem?.starter_code ?? {};
+  const starterCode = useMemo(
+    () => problem?.starter_code ?? {},
+    [problem?.starter_code]
+  );
+
   const languageOptions = useMemo<Language[]>(() => {
     const keys = Object.keys(starterCode).filter(isLanguage) as Language[];
     return keys.length > 0 ? keys : [DEFAULT_LANGUAGE];
   }, [starterCode]);
 
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    languageOptions[0] ?? DEFAULT_LANGUAGE
+    () => languageOptions[0] ?? DEFAULT_LANGUAGE
   );
-  const [code, setCode] = useState<string>(starterCode[selectedLanguage] ?? "");
+  const [code, setCode] = useState<string>(
+    () => starterCode[selectedLanguage] ?? ""
+  );
   const [draftMessage, setDraftMessage] = useState("");
   const [activeTab, setActiveTab] = useState<InterviewPanelTab>("chat");
+
+  const [prevStarterCode, setPrevStarterCode] = useState(starterCode);
+  if (starterCode !== prevStarterCode) {
+    setPrevStarterCode(starterCode);
+    const defaultLang = languageOptions[0] ?? DEFAULT_LANGUAGE;
+    setSelectedLanguage(defaultLang);
+    setCode(starterCode[defaultLang] ?? "");
+  }
 
   const transport = useInterviewApi({ problem });
   const {
@@ -78,23 +92,17 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
     showAdditional,
   } = useFeedbackPanelState(transport.evaluations, transport.completionResult);
 
-  useEffect(() => {
-    setSelectedLanguage(languageOptions[0] ?? DEFAULT_LANGUAGE);
-  }, [languageOptions]);
-
-  useEffect(() => {
-    setCode(starterCode[selectedLanguage] ?? "");
-  }, [starterCode, selectedLanguage]);
-
-  useEffect(() => {
-    if (
-      transport.status === "COMPLETED" &&
-      !transport.completionResult &&
-      activeTab !== "feedback"
-    ) {
+  const [hasAutoSwitchedTab, setHasAutoSwitchedTab] = useState(false);
+  if (
+    transport.status === "COMPLETED" &&
+    !transport.completionResult &&
+    !hasAutoSwitchedTab
+  ) {
+    setHasAutoSwitchedTab(true);
+    if (activeTab !== "feedback") {
       setActiveTab("feedback");
     }
-  }, [activeTab, transport.completionResult, transport.status]);
+  }
 
   const handleLanguageChange = useCallback(
     (nextLanguage: Language) => {
