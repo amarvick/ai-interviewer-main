@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useProblemSearchPageQuery } from "@/features/problem/hooks/useProblemSearchPageQuery";
 import ProblemGrid from "../../components/ProblemGrid/ProblemGrid";
@@ -10,16 +10,13 @@ export default function ProblemListPage() {
   const { id } = useParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+
   const { data, isLoading, isError, error } = useProblemSearchPageQuery({
     problemListId: id ?? "",
     searchTerm,
     page,
     pageSize: PAGE_SIZE,
   });
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm]);
 
   const clearSearch = () => {
     setSearchTerm("");
@@ -51,6 +48,7 @@ export default function ProblemListPage() {
                 placeholder="Search by title, category, or difficulty..."
                 onChange={(event) => {
                   setSearchTerm(event.target.value);
+                  setPage(1);
                 }}
               />
             </div>

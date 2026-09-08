@@ -115,12 +115,14 @@ export function useInterviewApi({
     };
   }, [applySessionDetail, problem.id]);
 
+  const { status, sessionId, completionResult, isLoadingFeedback } = state;
+
   useEffect(() => {
     if (
-      state.status !== "COMPLETED" ||
-      !state.sessionId ||
-      state.completionResult ||
-      state.isLoadingFeedback
+      status !== "COMPLETED" ||
+      !sessionId ||
+      completionResult ||
+      isLoadingFeedback
     ) {
       return;
     }
@@ -130,9 +132,9 @@ export function useInterviewApi({
 
     const hydrate = async () => {
       try {
-        const result = await completeInterviewSession(state.sessionId!);
+        const result = await completeInterviewSession(sessionId);
         const normalized = adaptCompletionResponse(result);
-        const detail = await getInterviewSession(state.sessionId!);
+        const detail = await getInterviewSession(sessionId);
         if (!isMounted) {
           return;
         }
@@ -157,9 +159,10 @@ export function useInterviewApi({
     };
   }, [
     applySessionDetail,
-    state.completionResult,
-    state.sessionId,
-    state.status,
+    completionResult,
+    isLoadingFeedback,
+    sessionId,
+    status,
   ]);
 
   const sendChatMessage = useCallback(

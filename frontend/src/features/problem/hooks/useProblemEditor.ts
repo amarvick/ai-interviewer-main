@@ -31,16 +31,22 @@ export interface UseProblemEditorResult {
 }
 
 export function useProblemEditor(problem: Problem): UseProblemEditorResult {
-  const starterCode = problem?.starter_code ?? {};
+  const starterCode = useMemo(
+    () => problem?.starter_code ?? {},
+    [problem?.starter_code]
+  );
+
   const languageOptions = useMemo<Language[]>(() => {
     const keys = Object.keys(starterCode).filter(isLanguage) as Language[];
     return keys.length > 0 ? keys : [DEFAULT_LANGUAGE];
   }, [starterCode]);
 
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    languageOptions[0] ?? DEFAULT_LANGUAGE
+    () => languageOptions[0] ?? DEFAULT_LANGUAGE
   );
-  const [code, setCode] = useState<string>(starterCode[selectedLanguage] ?? "");
+  const [code, setCode] = useState<string>(
+    () => starterCode[selectedLanguage] ?? ""
+  );
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmittedInSession, setHasSubmittedInSession] = useState(false);
@@ -50,11 +56,21 @@ export function useProblemEditor(problem: Problem): UseProblemEditorResult {
   >(() => buildInitialStatuses(problem));
   const [isSolvedModalOpen, setIsSolvedModalOpen] = useState(false);
 
-  useEffect(() => {
+  const [prevStarterCode, setPrevStarterCode] = useState(starterCode);
+  if (starterCode !== prevStarterCode) {
+    setPrevStarterCode(starterCode);
+    const defaultLang = languageOptions[0] ?? DEFAULT_LANGUAGE;
+    setSelectedLanguage(defaultLang);
+    setCode(starterCode[defaultLang] ?? "");
+  }
+
+  const [prevProblem, setPrevProblem] = useState(problem);
+  if (problem !== prevProblem) {
+    setPrevProblem(problem);
     setTestCaseStatuses(buildInitialStatuses(problem));
     setHasSubmittedInSession(false);
     setSessionErrors([]);
-  }, [problem]);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -77,14 +93,6 @@ export function useProblemEditor(problem: Problem): UseProblemEditorResult {
     void loadSubmissions();
     return () => controller.abort();
   }, [problem.id]);
-
-  useEffect(() => {
-    setSelectedLanguage(languageOptions[0] ?? DEFAULT_LANGUAGE);
-  }, [languageOptions]);
-
-  useEffect(() => {
-    setCode(starterCode[selectedLanguage] ?? "");
-  }, [starterCode, selectedLanguage]);
 
   const handleLanguageChange = (nextLanguage: Language) => {
     setSelectedLanguage(nextLanguage);
