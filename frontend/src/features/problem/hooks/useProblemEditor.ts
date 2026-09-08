@@ -7,11 +7,7 @@ import {
   buildInitialStatuses,
   mapStatusesForResult,
 } from "@/features/problem/utils/problemEditor";
-import {
-  DEFAULT_LANGUAGE,
-  isLanguage,
-  type Language,
-} from "@/types/language";
+import { DEFAULT_LANGUAGE, isLanguage, type Language } from "@/types/language";
 
 export interface UseProblemEditorResult {
   languageOptions: Language[];
@@ -42,11 +38,9 @@ export function useProblemEditor(problem: Problem): UseProblemEditorResult {
   }, [starterCode]);
 
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    () => languageOptions[0] ?? DEFAULT_LANGUAGE
+    languageOptions[0] ?? DEFAULT_LANGUAGE
   );
-  const [code, setCode] = useState<string>(
-    () => starterCode[selectedLanguage] ?? ""
-  );
+  const [code, setCode] = useState<string>(starterCode[selectedLanguage] ?? "");
   const [submissions, setSubmissions] = useState<SubmissionResponse[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmittedInSession, setHasSubmittedInSession] = useState(false);

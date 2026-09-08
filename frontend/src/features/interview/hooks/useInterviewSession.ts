@@ -1,11 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { Problem } from "@/types/problem";
-import {
-  DEFAULT_LANGUAGE,
-  isLanguage,
-  type Language,
-} from "@/types/language";
+import { DEFAULT_LANGUAGE, isLanguage, type Language } from "@/types/language";
 import { useInterviewApi } from "@/features/interview/hooks/useInterviewApi";
 import {
   useFeedbackPanelState,
@@ -52,7 +48,9 @@ export interface UseInterviewSessionResult {
   showAdditional: boolean;
 }
 
-export function useInterviewSession(problem: Problem): UseInterviewSessionResult {
+export function useInterviewSession(
+  problem: Problem
+): UseInterviewSessionResult {
   const starterCode = useMemo(
     () => problem?.starter_code ?? {},
     [problem?.starter_code]
@@ -64,11 +62,9 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
   }, [starterCode]);
 
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    () => languageOptions[0] ?? DEFAULT_LANGUAGE
+    languageOptions[0] ?? DEFAULT_LANGUAGE
   );
-  const [code, setCode] = useState<string>(
-    () => starterCode[selectedLanguage] ?? ""
-  );
+  const [code, setCode] = useState<string>(starterCode[selectedLanguage] ?? "");
   const [draftMessage, setDraftMessage] = useState("");
   const [activeTab, setActiveTab] = useState<InterviewPanelTab>("chat");
 
