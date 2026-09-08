@@ -64,10 +64,10 @@ export function useInterviewSession(problem: Problem): UseInterviewSessionResult
   }, [starterCode]);
 
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(
-    () => languageOptions[0] ?? DEFAULT_LANGUAGE
+    languageOptions[0] ?? DEFAULT_LANGUAGE
   );
   const [code, setCode] = useState<string>(
-    () => starterCode[selectedLanguage] ?? ""
+    starterCode[selectedLanguage] ?? ""
   );
   const [draftMessage, setDraftMessage] = useState("");
   const [activeTab, setActiveTab] = useState<InterviewPanelTab>("chat");
